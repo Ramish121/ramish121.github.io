@@ -406,7 +406,35 @@
         let isShuffleMode = false;
         let isPaletteEnabled = false; 
         
-        let quizStartTime; // NEW: Start Time Tracking
+        let quizStartTime; 
+        
+        // --- Prevent Accidental Refresh Logic ---
+        let quizActive = false;
+
+        window.addEventListener('beforeunload', function (e) {
+            if (quizActive) {
+                e.preventDefault(); 
+                e.returnValue = ''; // Required for Chrome
+            }
+        });
+
+        // NEW: Mobile Back Button Logic
+        // This detects when the user hits the physical back button on Android or swipes back on iOS
+        window.onpopstate = function (event) {
+            if (quizActive) {
+                // The user tried to go back while quiz is active
+                const userWantsToLeave = confirm("⚠️ Warning: Test in Progress!\n\nGoing back will reset your score and progress. Are you sure you want to leave?");
+                
+                if (userWantsToLeave) {
+                    // User confirmed they want to leave
+                    quizActive = false;
+                    exitToSetup();
+                } else {
+                    // User wants to stay, so we push the state back to "trap" the back button again
+                    history.pushState(null, document.title, location.href);
+                }
+            }
+        };
 
         // --- Theme Logic ---
         function setTheme(themeName) {
@@ -527,6 +555,11 @@
 
         // --- Quiz Logic ---
         function startQuiz(data, name) {
+            quizActive = true; // ENABLE REFRESH WARNING
+            
+            // PUSH HISTORY STATE (Locks the mobile back button)
+            history.pushState(null, document.title, location.href);
+
             if (isShuffleMode) questions = shuffleArray([...data]);
             else questions = data;
             
@@ -534,7 +567,7 @@
             currentIndex = 0;
             score = 0;
             userResponses = {};
-            quizStartTime = Date.now(); // START TIME LOGGED
+            quizStartTime = Date.now();
             
             document.getElementById('current-chapter-name').innerText = name;
             
@@ -656,6 +689,7 @@
         }
 
         function showResults() {
+            quizActive = false; // DISABLE REFRESH WARNING
             clearInterval(timerInterval);
             
             // TIME CALCULATION
@@ -779,8 +813,41 @@
         }
         
         function copyAIPrompt() {
-            const txt = `You are an MCQ Formatter. Task: Convert questions into STRICT MCQ FORMAT. 
-            RULES: 1. Start with original question number. 2. 4 options (a-d). 3. Asterisk (*) before correct label like *(a).`;
+            const txt = `You are an MCQ Formatter.
+
+Your task is to convert ANY questions, notes, paragraphs, or Q&A I give you into the following STRICT MCQ FORMAT.
+
+RULES (VERY IMPORTANT):
+
+1. Each question MUST start with a number followed by a dot.
+2. Each question MUST have exactly four options: (a), (b), (c), (d).
+3. ONLY the correct option MUST have an asterisk (*) before it.
+4. Correct option format MUST be exactly like this:
+   *(a) Correct answer text
+5. Wrong options format:
+   (b) Wrong answer
+6. Each option MUST be on a new line.
+7. Do NOT add explanations, headings, notes, emojis, or extra text.
+8. Do NOT change the meaning of the questions.
+9. Keep language simple and exam-oriented.
+10. Output ONLY the formatted MCQs — nothing else.
+11. Write in a form of code so that I can copy in just one click
+
+EXAMPLE OUTPUT FORMAT:
+
+1. Psychology is the scientific study of?
+*(a) Behaviour and mental processes
+(b) Only behaviour
+(c) Only mental processes
+(d) Human biology
+
+2. Who is known as the father of psychology?
+(a) Sigmund Freud
+*(b) Wilhelm Wundt
+(c) Ivan Pavlov
+(d) Carl Rogers
+
+Now convert the following content into this format:`;
             
             const textArea = document.createElement("textarea");
             textArea.value = txt;
@@ -828,7 +895,13 @@
         }
 
         function hideReviewScreen() { showView('result-view'); }
-        function exitToSetup() { clearInterval(timerInterval); location.reload(); }
+        
+        // UPDATED EXIT FUNCTION TO PREVENT DOUBLE WARNING
+        function exitToSetup() { 
+            quizActive = false; // Disable warning before intentional reload
+            clearInterval(timerInterval); 
+            location.reload(); 
+        }
 
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('quiz-view').classList.contains('hidden')) return;
