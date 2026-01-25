@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ramish MCQs</title>
     
     <!-- Favicon Added Here -->
@@ -113,6 +113,15 @@
             --color-primary-950: 69 26 3;
         }
 
+        /* NEW: Viewport Lock Styles to fix Mobile Address Bar issue */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Prevents whole page scrolling */
+            position: fixed; /* Rigidly locks the body */
+            overscroll-behavior: none; /* Prevents rubber-banding */
+        }
+
         .option-btn { transition: all 0.2s ease; }
         .correct { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; }
         .wrong { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
@@ -149,9 +158,10 @@
         .dark .p-wrong { background-color: #7f1d1d; color: #fecaca; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-x-hidden">
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <div id="app" class="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 h-screen">
+    <!-- CHANGED: h-[100dvh] ensures it takes full viewport height -->
+    <div id="app" class="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 h-[100dvh]">
         
         <!-- Sidebar -->
         <aside id="sidebar" class="w-full md:w-1/3 order-2 md:order-1 transition-all duration-300">
@@ -178,10 +188,27 @@
                             <button onclick="toggleHowItWorks()" class="text-primary-600 dark:text-primary-400 font-bold text-xs bg-primary-50 dark:bg-primary-900/30 px-2 py-1 rounded-lg hover:bg-primary-100 transition-colors">ℹ️ How It Works</button>
                         </div>
                     </div>
-                    <button onclick="toggleDarkMode()" id="theme-toggle" class="p-3 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform">
-                        <span id="theme-icon-sun" class="hidden text-yellow-400 text-xl">☀️</span>
-                        <span id="theme-icon-moon" class="text-slate-600 dark:text-slate-300 text-xl">🌙</span>
-                    </button>
+                    
+                    <!-- Buttons Container -->
+                    <div class="flex gap-3">
+                        <!-- Fullscreen Toggle Button (UPDATED WITH SVG ICONS) -->
+                        <button onclick="toggleFullScreen()" id="fs-toggle" class="p-3 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform group" title="Toggle Fullscreen">
+                            <!-- Icon: Maximize -->
+                            <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600 dark:text-slate-300">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                            </svg>
+                            <!-- Icon: Minimize -->
+                            <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden text-slate-600 dark:text-slate-300">
+                                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Theme Toggle Button -->
+                        <button onclick="toggleDarkMode()" id="theme-toggle" class="p-3 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform">
+                            <span id="theme-icon-sun" class="hidden text-yellow-400 text-xl">☀️</span>
+                            <span id="theme-icon-moon" class="text-slate-600 dark:text-slate-300 text-xl">🌙</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div id="how-it-works-box" class="hidden fade-in bg-white dark:bg-slate-900 border border-primary-100 dark:border-primary-900 shadow-lg rounded-2xl p-6 mb-8 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
@@ -199,23 +226,27 @@
                             </div>
                         </section>
                         <section class="pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <h3 class="font-bold text-purple-700 dark:text-purple-400 mb-2">🤖 AI Auto-Format (Recommended)</h3>
+                            <!-- CHANGED: Replaced hardcoded purple with primary -->
+                            <h3 class="font-bold text-primary-700 dark:text-primary-400 mb-2">🤖 AI Auto-Format (Recommended)</h3>
                             <p class="mb-2">Apne notes ko format karne ke liye AI use karein:</p>
                             <ul class="list-disc ml-5 mb-3 space-y-1">
                                 <li>Neeche diya gaya button dabakar prompt copy karein.</li>
                                 <li>Ise ChatGPT ya kisi bhi AI tool mein paste karein.</li>
                                 <li>Apne questions/notes paste karein aur output copy karke yahan use karein.</li>
                             </ul>
-                            <button id="copy-prompt-btn" onclick="copyAIPrompt()" class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold transition-all active:scale-95 shadow-md">📋 Copy AI Prompt</button>
+                            <!-- CHANGED: Replaced hardcoded purple bg with primary -->
+                            <button id="copy-prompt-btn" onclick="copyAIPrompt()" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-bold transition-all active:scale-95 shadow-md">📋 Copy AI Prompt</button>
                         </section>
                         <section class="pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <h3 class="font-bold text-emerald-700 dark:text-emerald-400 mb-2">⌨️ Shortcuts</h3>
+                            <!-- CHANGED: Replaced hardcoded emerald with primary -->
+                            <h3 class="font-bold text-primary-700 dark:text-primary-400 mb-2">⌨️ Shortcuts</h3>
                             <ul class="space-y-1 list-disc ml-5 text-xs">
                                 <li>Select: <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">1-4</code> or <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">A-D</code></li>
                                 <li>Next: <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">Enter</code></li>
                                 <li>Back: <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">Backspace</code></li>
                             </ul>
                         </section>
+                        
                     </div>
                 </div>
             </header>
@@ -262,7 +293,8 @@
                                 <label class="font-bold">Exam Mode</label>
                                 <span id="exam-desc" class="text-xs text-slate-500 block transition-all duration-300">Hide answers & score</span>
                             </div>
-                            <input type="checkbox" id="exam-toggle" class="w-5 h-5 accent-primary-600" onchange="updateSettingUI('exam')">
+                            <!-- UPDATED: Added saveSettingsToStorage() -->
+                            <input type="checkbox" id="exam-toggle" class="w-5 h-5 accent-primary-600" onchange="updateSettingUI('exam'); saveSettingsToStorage()">
                         </div>
 
                         <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
@@ -270,14 +302,16 @@
                                 <label class="font-bold">Shuffle Questions</label>
                                 <span id="shuffle-desc" class="text-xs text-slate-500 block transition-all duration-300">Randomize order</span>
                             </div>
-                            <input type="checkbox" id="shuffle-toggle" class="w-5 h-5 accent-primary-600" onchange="updateSettingUI('shuffle')">
+                            <!-- UPDATED: Added saveSettingsToStorage() -->
+                            <input type="checkbox" id="shuffle-toggle" class="w-5 h-5 accent-primary-600" onchange="updateSettingUI('shuffle'); saveSettingsToStorage()">
                         </div>
                         <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
                             <div>
                                 <label class="font-bold">Question Palette</label>
                                 <span id="palette-desc" class="text-xs text-slate-500 block transition-all duration-300">Show grid map</span>
                             </div>
-                            <input type="checkbox" id="palette-toggle" class="w-5 h-5 accent-primary-600" onchange="updateSettingUI('palette')">
+                            <!-- UPDATED: Added saveSettingsToStorage() -->
+                            <input type="checkbox" id="palette-toggle" class="w-5 h-5 accent-primary-600" onchange="updateSettingUI('palette'); saveSettingsToStorage()">
                         </div>
                         <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
                             <div class="flex justify-between items-center mb-2">
@@ -285,9 +319,11 @@
                                     <label class="font-bold">Timer</label>
                                     <span id="timer-desc" class="text-xs text-slate-500 block transition-all duration-300">Limit per question</span>
                                 </div>
-                                <input type="checkbox" id="timer-toggle" class="w-5 h-5 accent-primary-600" onchange="handleTimerToggle()">
+                                <!-- UPDATED: Added saveSettingsToStorage() -->
+                                <input type="checkbox" id="timer-toggle" class="w-5 h-5 accent-primary-600" onchange="handleTimerToggle(); saveSettingsToStorage()">
                             </div>
-                            <div id="timer-input-container" class="hidden"><input id="timer-setting" type="number" value="30" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Seconds"></div>
+                            <!-- UPDATED: Added onchange to save timer value -->
+                            <div id="timer-input-container" class="hidden"><input id="timer-setting" type="number" value="30" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Seconds" onchange="saveSettingsToStorage()"></div>
                         </div>
                     </div>
                     <button onclick="closeSettings()" class="w-full mt-8 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl shadow-lg">Done</button>
@@ -295,7 +331,7 @@
             </div>
 
             <!-- Quiz View -->
-            <div id="quiz-view" class="hidden fade-in flex flex-col h-full max-h-[calc(100vh-2rem)]">
+            <div id="quiz-view" class="hidden fade-in flex flex-col h-full">
                 <div class="shrink-0 mb-4 pt-2">
                     <div class="flex flex-wrap justify-between items-end mb-2 gap-4">
                         <div>
@@ -318,11 +354,23 @@
                         <div id="progress-bar" class="bg-primary-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
+                <!-- CHANGED: Added flex-1 and min-h-0 so it scrolls independently -->
                 <div id="question-card" class="flex-1 overflow-y-auto custom-scroll bg-white dark:bg-slate-900 shadow-lg rounded-2xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 min-h-0">
-                    <h3 id="question-text" class="text-lg md:text-2xl font-semibold mb-6 leading-snug text-slate-800 dark:text-slate-100">Sawal...</h3>
+                    
+                    <!-- NEW: Question Header with AI Button -->
+                    <div class="flex justify-between items-start gap-4 mb-6">
+                        <h3 id="question-text" class="text-lg md:text-2xl font-semibold leading-snug text-slate-800 dark:text-slate-100">Sawal...</h3>
+                        <!-- CHANGED: Themed AI Button -->
+                        <button onclick="askAI()" class="shrink-0 bg-primary-100 hover:bg-primary-200 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 p-2 rounded-lg text-xs font-bold transition-colors flex flex-col items-center gap-1 shadow-sm" title="Explain with ChatGPT">
+                            <span class="text-xl">🤖</span>
+                            <span>Explain</span>
+                        </button>
+                    </div>
+
                     <div id="options-container" class="grid grid-cols-1 gap-3 md:gap-4 pb-2"></div>
                 </div>
-                <div class="shrink-0 pt-4 flex gap-4 justify-between items-center bg-transparent">
+                <!-- CHANGED: Added background and z-index to ensure buttons stay visible and separated -->
+                <div class="shrink-0 pt-4 flex gap-4 justify-between items-center bg-white dark:bg-slate-950 z-10">
                     <button onclick="prevQuestion()" id="prev-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold">Back</button>
                     <button onclick="exitToSetup()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium underline text-sm">Exit</button>
                     <button onclick="nextOrFinish()" id="next-btn" class="px-8 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 shadow-lg">Next</button>
@@ -355,23 +403,27 @@
                 <div id="result-emoji" class="text-7xl mb-6">✨</div>
                 <h2 class="text-4xl font-black text-slate-800 dark:text-slate-100 mb-2">Alhamdullilah Test Completed</h2>
                 
-                <!-- Time Stats Row -->
+                <!-- Time Stats Row (THEMED) -->
                 <div class="grid grid-cols-2 gap-4 max-w-2xl mx-auto mb-6">
-                     <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-3xl border border-indigo-100 dark:border-indigo-900/50">
-                        <p class="text-[10px] uppercase font-black text-indigo-600 dark:text-indigo-400">Total Time</p>
-                        <p id="final-time" class="text-2xl font-black text-indigo-800 dark:text-indigo-300">00:00</p>
+                     <div class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-3xl border border-primary-100 dark:border-primary-900/50">
+                        <p class="text-[10px] uppercase font-black text-primary-600 dark:text-primary-400">Total Time</p>
+                        <p id="final-time" class="text-2xl font-black text-primary-800 dark:text-primary-300">00:00</p>
                     </div>
-                    <div class="bg-pink-50 dark:bg-pink-900/20 p-4 rounded-3xl border border-pink-100 dark:border-pink-900/50">
-                        <p class="text-[10px] uppercase font-black text-pink-600 dark:text-pink-400">Avg Time / Q</p>
-                        <p id="final-avg-time" class="text-2xl font-black text-pink-800 dark:text-pink-300">0s</p>
+                    <div class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-3xl border border-primary-100 dark:border-primary-900/50">
+                        <p class="text-[10px] uppercase font-black text-primary-600 dark:text-primary-400">Avg Time / Q</p>
+                        <p id="final-avg-time" class="text-2xl font-black text-primary-800 dark:text-primary-300">0s</p>
                     </div>
                 </div>
 
+                <!-- Stats Grid (THEMED, except correct) -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-10">
                     <div class="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-primary-600">Total</p><p id="final-total" class="text-3xl font-black text-primary-800 dark:text-primary-300">0</p></div>
+                    <!-- KEEP GREEN FOR CORRECT -->
                     <div class="bg-green-50 dark:bg-green-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-green-600">Correct</p><p id="final-correct" class="text-3xl font-black text-green-800 dark:text-green-300">0</p></div>
-                    <div class="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-amber-600">Attempted</p><p id="final-attempted" class="text-3xl font-black text-amber-800 dark:text-amber-300">0</p></div>
-                    <div class="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-purple-600">Accuracy</p><p id="final-accuracy" class="text-3xl font-black text-purple-800 dark:text-purple-300">0%</p></div>
+                    <!-- THEMED -->
+                    <div class="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-primary-600">Attempted</p><p id="final-attempted" class="text-3xl font-black text-primary-800 dark:text-primary-300">0</p></div>
+                    <!-- THEMED -->
+                    <div class="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-primary-600">Accuracy</p><p id="final-accuracy" class="text-3xl font-black text-primary-800 dark:text-primary-300">0%</p></div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <button id="practice-wrong-btn" onclick="startWrongQuestionsPractice()" class="hidden bg-red-600 text-white px-8 py-4 rounded-2xl font-bold">🎯 Practice Mistakes</button>
@@ -381,7 +433,7 @@
             </div>
 
             <!-- Review View -->
-            <div id="review-view" class="hidden fade-in flex flex-col h-full max-h-[calc(100vh-2rem)]">
+            <div id="review-view" class="hidden fade-in flex flex-col h-full">
                 <div class="shrink-0 mb-4 pt-2 border-b border-slate-100 dark:border-slate-800 pb-4"><h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">Mistakes & Review</h2></div>
                 <div id="review-container" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1"></div>
                 <div class="shrink-0 pt-4 flex gap-4 justify-between items-center bg-transparent">
@@ -390,6 +442,11 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- NEW: Toast Notification Container -->
+    <div id="toast-notification" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-800 dark:bg-white dark:text-slate-900 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none z-50 flex items-center gap-2 font-medium border border-slate-700 dark:border-slate-200">
+        <span id="toast-text">Notification</span>
     </div>
 
     <script>
@@ -576,6 +633,9 @@
 
             showView('quiz-view');
             showQuestion();
+            
+            // Initial save
+            saveSession();
         }
 
         function calculateScore() {
@@ -586,7 +646,9 @@
 
         function showQuestion() {
             const q = questions[currentIndex];
+            // NEW: Update text inside the preserved HTML structure
             document.getElementById('question-text').innerText = `${q.originalNumber}. ${q.text}`;
+
             const container = document.getElementById('options-container');
             container.innerHTML = '';
 
@@ -627,6 +689,7 @@
                         timerInterval = null;
                         if (opt.label === q.correctAnswer) score = calculateScore();
                     }
+                    saveSession(); // Save after answering
                     showQuestion(); 
                 };
                 container.appendChild(btn);
@@ -673,6 +736,7 @@
             timerInterval = null;
             if (currentIndex < questions.length - 1) {
                 currentIndex++;
+                saveSession(); // Save on next
                 showQuestion();
             } else {
                 showResults();
@@ -684,12 +748,14 @@
             timerInterval = null;
             if (currentIndex > 0) {
                 currentIndex--;
+                saveSession(); // Save on back
                 showQuestion();
             }
         }
 
         function showResults() {
             quizActive = false; // DISABLE REFRESH WARNING
+            clearSession(); // Clear session on finish
             clearInterval(timerInterval);
             
             // TIME CALCULATION
@@ -773,16 +839,68 @@
             }).filter(q => q !== null);
         }
 
+        // --- UPDATED: Load Library to include Resume Button ---
         function loadLibrary() {
             const listEl = document.getElementById('library-list');
             const searchVal = document.getElementById('library-search').value.toLowerCase();
             const savedData = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
-            listEl.innerHTML = '';
+            
+            // Check for active session in localStorage
+            const currentSessionJson = localStorage.getItem('mcq_hub_current_session');
+            let sessionBtnHtml = '';
+            
+            // Only show continue button if we are not searching
+            if (currentSessionJson && !searchVal) {
+                try {
+                    const sessionData = JSON.parse(currentSessionJson);
+                    // Calculate percentage
+                    const progress = Math.round(((sessionData.currentIndex) / sessionData.questions.length) * 100);
+                    
+                    // Generate the "Continue" card HTML (NEW INTERACTIVE DESIGN)
+                    sessionBtnHtml = `
+                    <div onclick="resumeSession()" class="mb-6 group w-full bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 border-green-100 dark:border-green-900/30 hover:border-green-500 dark:hover:border-green-500 transition-all shadow-md hover:shadow-xl cursor-pointer relative overflow-hidden transform hover:-translate-y-1">
+                        
+                        <!-- Header -->
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="text-[10px] font-black tracking-widest text-green-600 dark:text-green-400 uppercase mb-1 flex items-center gap-1">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                    CONTINUE PROGRESS
+                                </p>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm md:text-base truncate w-48 md:w-56 leading-tight">${sessionData.originalChapterName}</h3>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-xl group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar Section -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">
+                                <span>Question ${sessionData.currentIndex + 1} / ${sessionData.questions.length}</span>
+                                <span class="text-green-600 dark:text-green-400">${progress}% Done</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700">
+                                <div class="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-4"></div>
+                    `;
+                } catch(e) {
+                    console.error("Error parsing session data", e);
+                }
+            }
+
+            listEl.innerHTML = sessionBtnHtml;
+            
             const filtered = savedData.filter(i => i.name.toLowerCase().includes(searchVal));
-            if(filtered.length === 0) listEl.innerHTML = `<p class="text-slate-400 text-center italic p-4">Empty</p>`;
+            if(filtered.length === 0 && !sessionBtnHtml) listEl.innerHTML = `<p class="text-slate-400 text-center italic p-4">Empty</p>`;
+            
             [...filtered].reverse().forEach(item => {
                 const div = document.createElement('div');
-                div.className = "flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20";
+                // CHANGED: Hover color to primary
+                div.className = "flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20";
                 div.innerHTML = `<div onclick="loadTestFromLibrary(${item.id})" class="flex-1"><p class="font-bold text-sm">${item.name}</p><p class="text-[10px] text-slate-400">${item.qCount} Qs</p></div><button onclick="deleteLibItem(event, ${item.id})" class="text-slate-300 hover:text-red-500">🗑️</button>`;
                 listEl.appendChild(div);
             });
@@ -811,6 +929,26 @@
             document.getElementById('theme-icon-sun').classList.remove('hidden');
             document.getElementById('theme-icon-moon').classList.add('hidden');
         }
+
+        // --- Fullscreen Logic ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Listen for fullscreen change events (e.g., user presses Esc) to update icon
+        document.addEventListener('fullscreenchange', () => {
+            const isFS = !!document.fullscreenElement;
+            document.getElementById('fs-icon-enter').classList.toggle('hidden', isFS);
+            document.getElementById('fs-icon-exit').classList.toggle('hidden', !isFS);
+        });
         
         function copyAIPrompt() {
             const txt = `You are an MCQ Formatter.
@@ -867,6 +1005,89 @@ Now convert the following content into this format:`;
             document.body.removeChild(textArea);
         }
 
+        // NEW: Toast Notification Function
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            const text = document.getElementById('toast-text');
+            text.innerText = message;
+            
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 3000); // 3 seconds
+        }
+
+        // NEW: AI Explanation Function (Updated to use Toast)
+        function askAI() {
+            if (!questions || questions.length === 0 || !questions[currentIndex]) return;
+            
+            const q = questions[currentIndex];
+            const optionsText = q.options.map(o => `(${o.label}) ${o.text}`).join('\n');
+            
+            const prompt = `Act as an expert exam-oriented teacher.
+
+Explain the following MCQ in a clear, structured, step-by-step manner using simple Hinglish.
+Focus on concept clarity, option elimination, and exam retention.
+
+Step 1: Decode the question  
+– Question ko simple Hinglish mein samjhao  
+– Identify karo:
+  • Topic / chapter
+  • Question ka level (conceptual / factual / application)
+
+Step 2: Core concept / background recall  
+– Is question se related main theory / principle / rule explain karo  
+– Agar relevant ho to scientist / psychologist / theorist ka naam mention karo  
+– Sirf exam-useful background do (extra bookish explanation avoid karo)
+
+Step 3: Option-wise analysis  
+– Har option (a, b, c, d) ko alag-alag analyse karo  
+– Har option ke liye batao:
+  ✔ kyun correct ho sakta hai  
+  ❌ kyun incorrect hai  
+– 3–4 lines mein:
+  • Concept clear karo  
+  • Common confusion address karo  
+– MCQ elimination logic bhi apply karo
+
+Step 4: Final answer  
+– Correct option clearly mention karo  
+– Ek short one-line reason do (easy exam recall ke liye)
+
+Step 5: Retention & exam tips  
+– Agar concept frequently asked ho, mention karo  
+– Agar koi tricky term ho, short definition add karo  
+– Ek quick exam tip do jo yaad reh sake
+
+Now explain this MCQ:
+
+Question:
+${q.text}
+
+Options:
+${optionsText}`;
+
+            // Copy to clipboard
+            const textArea = document.createElement("textarea");
+            textArea.value = prompt;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                // CHANGED: Use showToast instead of alert
+                showToast("✅ Prompt Copied! Paste in any AI tool.");
+            } catch (err) {
+                showToast("❌ Failed to copy. Please copy manually.");
+            }
+            document.body.removeChild(textArea);
+        }
+
         function startWrongQuestionsPractice() {
             const wrong = questions.filter((q, i) => userResponses[i] !== q.correctAnswer);
             isExamMode = false;
@@ -896,11 +1117,105 @@ Now convert the following content into this format:`;
 
         function hideReviewScreen() { showView('result-view'); }
         
-        // UPDATED EXIT FUNCTION TO PREVENT DOUBLE WARNING
+        // UPDATED EXIT FUNCTION TO ASK FOR CONFIRMATION
         function exitToSetup() { 
+            // If the quiz is still running (quizActive is true), ask for confirmation first
+            if (quizActive) {
+                const confirmExit = confirm("⚠️ Are you sure you want to exit?\n\nYour progress will be lost.");
+                if (!confirmExit) return; // If user clicks Cancel, do nothing
+            }
+
+            clearSession(); // Clear session if user explicitly exits
             quizActive = false; // Disable warning before intentional reload
             clearInterval(timerInterval); 
             location.reload(); 
+        }
+
+        // --- Session Management Logic (Cookies/LocalStorage) ---
+        
+        function saveSession() {
+            if (!quizActive) return;
+            const sessionData = {
+                questions,
+                originalChapterName,
+                currentIndex,
+                score,
+                userResponses,
+                maxTimePerQuestion,
+                isExamMode,
+                isShuffleMode,
+                isPaletteEnabled,
+                // Save offset so we can reconstruct total time
+                elapsedTimeOffset: Date.now() - quizStartTime 
+            };
+            localStorage.setItem('mcq_hub_current_session', JSON.stringify(sessionData));
+        }
+
+        function clearSession() {
+            localStorage.removeItem('mcq_hub_current_session');
+        }
+
+        // NEW: Persistent Settings Logic
+        function saveSettingsToStorage() {
+            const settings = {
+                exam: document.getElementById('exam-toggle').checked,
+                shuffle: document.getElementById('shuffle-toggle').checked,
+                palette: document.getElementById('palette-toggle').checked,
+                timer: document.getElementById('timer-toggle').checked,
+                timerVal: document.getElementById('timer-setting').value
+            };
+            localStorage.setItem('mcq_hub_settings_pref', JSON.stringify(settings));
+        }
+
+        function loadSettingsFromStorage() {
+            const saved = localStorage.getItem('mcq_hub_settings_pref');
+            if (saved) {
+                try {
+                    const s = JSON.parse(saved);
+                    if(document.getElementById('exam-toggle')) document.getElementById('exam-toggle').checked = s.exam;
+                    if(document.getElementById('shuffle-toggle')) document.getElementById('shuffle-toggle').checked = s.shuffle;
+                    if(document.getElementById('palette-toggle')) document.getElementById('palette-toggle').checked = s.palette;
+                    if(document.getElementById('timer-toggle')) document.getElementById('timer-toggle').checked = s.timer;
+                    if(document.getElementById('timer-setting')) document.getElementById('timer-setting').value = s.timerVal || 30;
+                } catch(e) {
+                    console.error("Error loading settings", e);
+                }
+            }
+        }
+
+        // UPDATED: This function is now ONLY called via the button in the Library
+        function resumeSession() {
+            const saved = localStorage.getItem('mcq_hub_current_session');
+            if (saved) {
+                const data = JSON.parse(saved);
+                
+                // Restore State
+                questions = data.questions;
+                originalChapterName = data.originalChapterName;
+                currentIndex = data.currentIndex;
+                score = data.score;
+                userResponses = data.userResponses;
+                maxTimePerQuestion = data.maxTimePerQuestion;
+                isExamMode = data.isExamMode;
+                isShuffleMode = data.isShuffleMode;
+                isPaletteEnabled = data.isPaletteEnabled;
+                
+                // Restore Time
+                quizStartTime = Date.now() - data.elapsedTimeOffset;
+
+                // Restore UI
+                quizActive = true;
+                // Trap Back Button
+                history.pushState(null, document.title, location.href);
+
+                document.getElementById('current-chapter-name').innerText = originalChapterName;
+                
+                if (isPaletteEnabled) document.getElementById('open-palette-btn').classList.remove('hidden');
+                else document.getElementById('open-palette-btn').classList.add('hidden');
+
+                showView('quiz-view');
+                showQuestion();
+            }
         }
 
         document.addEventListener('keydown', (e) => {
@@ -915,7 +1230,11 @@ Now convert the following content into this format:`;
             if(k === 'backspace') prevQuestion();
         });
 
-        window.onload = loadLibrary;
+        window.onload = function() {
+            loadSettingsFromStorage(); // Load settings preferences first
+            loadLibrary();
+            // Removed automatic resume check
+        };
     </script>
 </body>
 </html>
