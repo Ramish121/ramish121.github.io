@@ -171,11 +171,21 @@
                     <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         📚 Library
                     </h2>
-                    <button onclick="createFolder()" class="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700" title="Create New Folder">
-                        ➕📁
+                    <!-- CHANGED: Switched to toggleFolderInput -->
+                    <button onclick="toggleFolderInput()" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-1 font-bold text-xs text-slate-600 dark:text-slate-300 shadow-sm" title="Create New Folder">
+                        <span>New Folder</span> ➕📁
                     </button>
                 </div>
                 
+                <!-- NEW: Inline Folder Input Form (Hidden by default) -->
+                <div id="new-folder-form" class="hidden mb-4 p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl transition-all">
+                    <input type="text" id="new-folder-name" class="w-full p-2 mb-2 text-sm border dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" placeholder="Folder Name..." onkeydown="if(event.key === 'Enter') saveNewFolder()">
+                    <div class="flex gap-2">
+                        <button onclick="saveNewFolder()" class="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 rounded-lg transition-colors">Create</button>
+                        <button onclick="toggleFolderInput()" class="flex-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-300 text-xs font-bold py-2 rounded-lg transition-colors">Cancel</button>
+                    </div>
+                </div>
+
                 <div class="relative mb-4">
                     <input type="text" id="library-search" oninput="loadLibrary()" placeholder="Search..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none">
                     <div class="absolute left-3 top-2.5 text-slate-400">🔍</div>
@@ -873,10 +883,24 @@
             }).filter(q => q !== null);
         }
 
-        // --- NEW: Folder Logic ---
-        function createFolder() {
-            const name = prompt("Enter Folder Name:");
-            if (!name) return;
+        // --- NEW: Folder Logic (Updated for Mobile) ---
+        function toggleFolderInput() {
+            const form = document.getElementById('new-folder-form');
+            const input = document.getElementById('new-folder-name');
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) {
+                setTimeout(() => input.focus(), 100); // Focus input automatically
+            }
+            input.value = ''; // Reset value
+        }
+
+        function saveNewFolder() {
+            const name = document.getElementById('new-folder-name').value.trim();
+            if (!name) {
+                showToast("❌ Please enter a folder name");
+                return;
+            }
+            
             const lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
             lib.push({
                 id: Date.now(),
@@ -885,7 +909,10 @@
                 parentId: currentFolderId
             });
             localStorage.setItem('mcq_hub_library', JSON.stringify(lib));
-            loadLibrary();
+            
+            toggleFolderInput(); // Hide form
+            loadLibrary(); // Refresh list
+            showToast("✅ Folder Created!");
         }
 
         function openFolder(id) {
