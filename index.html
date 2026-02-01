@@ -266,7 +266,14 @@
                     </div>
                 </div>
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Paste Questions:</label>
+                    <!-- NEW: Header with Upload Button -->
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Paste Questions:</label>
+                        <label class="cursor-pointer bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:hover:bg-primary-900/50 dark:text-primary-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border border-primary-100 dark:border-primary-800 shadow-sm active:scale-95">
+                            <input type="file" accept=".txt" class="hidden" onchange="handleFileUpload(event)">
+                            <span>📂 Upload .txt</span>
+                        </label>
+                    </div>
                     <textarea id="combined-input" rows="10" class="w-full p-4 border dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none font-mono text-sm text-slate-900 dark:text-white" placeholder="25. Question text here?&#10;*(a) Correct Answer&#10;(b) Wrong Option..."></textarea>
                 </div>
                 <button onclick="saveAndStart()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 text-xl tracking-wide">🚀 Bismillah</button>
@@ -913,10 +920,22 @@
             if(filtered.length === 0 && !sessionBtnHtml) listEl.innerHTML = `<p class="text-slate-400 text-center italic p-4">Empty</p>`;
             
             [...filtered].reverse().forEach(item => {
+                // NEW: Date formatting
+                const dateObj = new Date(item.id);
+                const dateStr = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
                 const div = document.createElement('div');
                 // CHANGED: Hover color to primary
                 div.className = "flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20";
-                div.innerHTML = `<div onclick="loadTestFromLibrary(${item.id})" class="flex-1"><p class="font-bold text-sm">${item.name}</p><p class="text-[10px] text-slate-400">${item.qCount} Qs</p></div><button onclick="deleteLibItem(event, ${item.id})" class="text-slate-300 hover:text-red-500">🗑️</button>`;
+                div.innerHTML = `
+                <div onclick="loadTestFromLibrary(${item.id})" class="flex-1">
+                    <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${item.name}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-[10px] text-slate-500 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-mono">${item.qCount} Qs</span>
+                        <span class="text-[10px] text-slate-400 flex items-center gap-1">📅 ${dateStr}</span>
+                    </div>
+                </div>
+                <button onclick="deleteLibItem(event, ${item.id})" class="p-2 text-slate-300 hover:text-red-500 transition-colors">🗑️</button>`;
                 listEl.appendChild(div);
             });
         }
@@ -1023,6 +1042,32 @@ Now convert the following content into this format:`;
                 alert("Failed to copy automatically. Please manually copy the prompt.");
             }
             document.body.removeChild(textArea);
+        }
+
+        // NEW: Handle File Upload Logic
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Create a FileReader to read the file
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                // Put the content into the textarea
+                document.getElementById('combined-input').value = content;
+                showToast("✅ File Loaded! Click 'Bismillah' to start.");
+            };
+            
+            reader.onerror = function() {
+                showToast("❌ Error reading file. Please try again.");
+            };
+
+            // Read the file as text
+            reader.readAsText(file);
+            
+            // Reset the input so the same file can be selected again if needed
+            event.target.value = '';
         }
 
         // NEW: Toast Notification Function
