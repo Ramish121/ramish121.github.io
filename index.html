@@ -166,9 +166,16 @@
         <!-- Sidebar -->
         <aside id="sidebar" class="w-full md:w-1/3 order-2 md:order-1 transition-all duration-300">
             <div class="bg-white dark:bg-slate-900 shadow-xl rounded-2xl p-6 border border-slate-200 dark:border-slate-800 h-fit sticky top-8">
-                <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-                    📚 My Local Library
-                </h2>
+                <!-- NEW: Updated Header to include Folder Button -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        📚 Library
+                    </h2>
+                    <button onclick="createFolder()" class="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700" title="Create New Folder">
+                        ➕📁
+                    </button>
+                </div>
+                
                 <div class="relative mb-4">
                     <input type="text" id="library-search" oninput="loadLibrary()" placeholder="Search..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none">
                     <div class="absolute left-3 top-2.5 text-slate-400">🔍</div>
@@ -480,6 +487,9 @@
         
         let quizStartTime; 
         
+        // NEW: Folder System State
+        let currentFolderId = null;
+        
         // --- Prevent Accidental Refresh Logic ---
         let quizActive = false;
 
@@ -491,18 +501,13 @@
         });
 
         // NEW: Mobile Back Button Logic
-        // This detects when the user hits the physical back button on Android or swipes back on iOS
         window.onpopstate = function (event) {
             if (quizActive) {
-                // The user tried to go back while quiz is active
                 const userWantsToLeave = confirm("⚠️ Warning: Test in Progress!\n\nGoing back will reset your score and progress. Are you sure you want to leave?");
-                
                 if (userWantsToLeave) {
-                    // User confirmed they want to leave
                     quizActive = false;
                     exitToSetup();
                 } else {
-                    // User wants to stay, so we push the state back to "trap" the back button again
                     history.pushState(null, document.title, location.href);
                 }
             }
@@ -636,7 +641,7 @@
         function startQuiz(data, name) {
             quizActive = true; // ENABLE REFRESH WARNING
             
-            // PUSH HISTORY STATE (Locks the mobile back button)
+            // PUSH HISTORY STATE
             history.pushState(null, document.title, location.href);
 
             if (isShuffleMode) questions = shuffleArray([...data]);
@@ -668,7 +673,6 @@
 
         function showQuestion() {
             const q = questions[currentIndex];
-            // NEW: Update text inside the preserved HTML structure
             document.getElementById('question-text').innerText = `${q.originalNumber}. ${q.text}`;
 
             const container = document.getElementById('options-container');
@@ -821,7 +825,15 @@
             if (parsed.length === 0) { alert("Format Error!"); return; }
             
             const lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
-            lib.push({ id: Date.now(), name, content, qCount: parsed.length, timerPref: maxTimePerQuestion });
+            lib.push({ 
+                id: Date.now(), 
+                name, 
+                content, 
+                qCount: parsed.length, 
+                timerPref: maxTimePerQuestion,
+                type: 'test',
+                parentId: currentFolderId // SAVE IN CURRENT FOLDER
+            });
             localStorage.setItem('mcq_hub_library', JSON.stringify(lib));
             loadLibrary();
             startQuiz(parsed, name);
@@ -861,7 +873,38 @@
             }).filter(q => q !== null);
         }
 
-        // --- UPDATED: Load Library to include Resume Button ---
+        // --- NEW: Folder Logic ---
+        function createFolder() {
+            const name = prompt("Enter Folder Name:");
+            if (!name) return;
+            const lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
+            lib.push({
+                id: Date.now(),
+                name: name,
+                type: 'folder',
+                parentId: currentFolderId
+            });
+            localStorage.setItem('mcq_hub_library', JSON.stringify(lib));
+            loadLibrary();
+        }
+
+        function openFolder(id) {
+            currentFolderId = id;
+            loadLibrary();
+        }
+
+        function navigateUp() {
+            const lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
+            const currentFolder = lib.find(i => i.id === currentFolderId);
+            if (currentFolder) {
+                currentFolderId = currentFolder.parentId || null;
+            } else {
+                currentFolderId = null;
+            }
+            loadLibrary();
+        }
+
+        // --- UPDATED: Load Library with Folders ---
         function loadLibrary() {
             const listEl = document.getElementById('library-list');
             const searchVal = document.getElementById('library-search').value.toLowerCase();
@@ -871,18 +914,13 @@
             const currentSessionJson = localStorage.getItem('mcq_hub_current_session');
             let sessionBtnHtml = '';
             
-            // Only show continue button if we are not searching
-            if (currentSessionJson && !searchVal) {
+            if (currentSessionJson && !searchVal && currentFolderId === null) {
                 try {
                     const sessionData = JSON.parse(currentSessionJson);
-                    // Calculate percentage
                     const progress = Math.round(((sessionData.currentIndex) / sessionData.questions.length) * 100);
                     
-                    // Generate the "Continue" card HTML (NEW INTERACTIVE DESIGN)
                     sessionBtnHtml = `
                     <div onclick="resumeSession()" class="mb-6 group w-full bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 border-green-100 dark:border-green-900/30 hover:border-green-500 dark:hover:border-green-500 transition-all shadow-md hover:shadow-xl cursor-pointer relative overflow-hidden transform hover:-translate-y-1">
-                        
-                        <!-- Header -->
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <p class="text-[10px] font-black tracking-widest text-green-600 dark:text-green-400 uppercase mb-1 flex items-center gap-1">
@@ -895,8 +933,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                             </div>
                         </div>
-
-                        <!-- Progress Bar Section -->
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">
                                 <span>Question ${sessionData.currentIndex + 1} / ${sessionData.questions.length}</span>
@@ -915,36 +951,92 @@
             }
 
             listEl.innerHTML = sessionBtnHtml;
+
+            // Back Button logic
+            if (currentFolderId && !searchVal) {
+                const backBtn = document.createElement('div');
+                backBtn.className = "flex items-center gap-2 p-2 mb-2 text-primary-600 dark:text-primary-400 font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm";
+                backBtn.onclick = navigateUp;
+                backBtn.innerHTML = `⬅️ Back to Library`;
+                listEl.appendChild(backBtn);
+            }
             
-            const filtered = savedData.filter(i => i.name.toLowerCase().includes(searchVal));
-            if(filtered.length === 0 && !sessionBtnHtml) listEl.innerHTML = `<p class="text-slate-400 text-center italic p-4">Empty</p>`;
+            // Filter logic: If search, show all. If no search, show contents of currentFolderId.
+            // Items with no parentId are treated as root (null).
+            let filtered = [];
+            if (searchVal) {
+                filtered = savedData.filter(i => i.name.toLowerCase().includes(searchVal));
+            } else {
+                filtered = savedData.filter(i => {
+                    if (currentFolderId === null) return !i.parentId;
+                    return i.parentId === currentFolderId;
+                });
+            }
+
+            if(filtered.length === 0 && !sessionBtnHtml && !currentFolderId) listEl.innerHTML += `<p class="text-slate-400 text-center italic p-4">Empty</p>`;
             
-            [...filtered].reverse().forEach(item => {
-                // NEW: Date formatting
+            // Sort: Folders first, then items by date (newest first)
+            filtered.sort((a, b) => {
+                if (a.type === 'folder' && b.type !== 'folder') return -1;
+                if (a.type !== 'folder' && b.type === 'folder') return 1;
+                return b.id - a.id;
+            });
+
+            filtered.forEach(item => {
                 const dateObj = new Date(item.id);
                 const dateStr = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
                 const div = document.createElement('div');
-                // CHANGED: Hover color to primary
-                div.className = "flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20";
-                div.innerHTML = `
-                <div onclick="loadTestFromLibrary(${item.id})" class="flex-1">
-                    <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${item.name}</p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-[10px] text-slate-500 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-mono">${item.qCount} Qs</span>
-                        <span class="text-[10px] text-slate-400 flex items-center gap-1">📅 ${dateStr}</span>
+                
+                if (item.type === 'folder') {
+                    // Render Folder
+                    div.className = "flex justify-between items-center p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-100 dark:border-yellow-900/30 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/30 mb-2";
+                    div.innerHTML = `
+                    <div onclick="openFolder(${item.id})" class="flex-1 flex items-center gap-3">
+                        <span class="text-2xl">📁</span>
+                        <div>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${item.name}</p>
+                            <p class="text-[10px] text-slate-400">${dateStr}</p>
+                        </div>
                     </div>
-                </div>
-                <button onclick="deleteLibItem(event, ${item.id})" class="p-2 text-slate-300 hover:text-red-500 transition-colors">🗑️</button>`;
+                    <button onclick="deleteLibItem(event, ${item.id}, 'folder')" class="p-2 text-slate-300 hover:text-red-500 transition-colors">🗑️</button>`;
+                } else {
+                    // Render Test Item
+                    div.className = "flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 mb-2";
+                    div.innerHTML = `
+                    <div onclick="loadTestFromLibrary(${item.id})" class="flex-1">
+                        <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${item.name}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-[10px] text-slate-500 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-mono">${item.qCount} Qs</span>
+                            <span class="text-[10px] text-slate-400 flex items-center gap-1">📅 ${dateStr}</span>
+                        </div>
+                    </div>
+                    <button onclick="deleteLibItem(event, ${item.id}, 'test')" class="p-2 text-slate-300 hover:text-red-500 transition-colors">🗑️</button>`;
+                }
                 listEl.appendChild(div);
             });
         }
 
-        function deleteLibItem(e, id) {
+        // Updated Delete Logic for folders
+        function deleteLibItem(e, id, type) {
             e.stopPropagation();
-            if(confirm("Delete?")) {
+            const msg = type === 'folder' ? "⚠️ Delete this folder and ALL tests inside it?" : "Delete this test?";
+            if(confirm(msg)) {
                 let lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
-                lib = lib.filter(i => i.id !== id);
+                
+                if (type === 'folder') {
+                    // Find all descendant IDs (Recursive deletion logic simulation)
+                    // For single level depth (current implementation), we delete direct children.
+                    // If we support nested folders fully, we need recursion.
+                    const idsToDelete = [id];
+                    // Find children
+                    const children = lib.filter(i => i.parentId === id);
+                    children.forEach(c => idsToDelete.push(c.id));
+                    
+                    lib = lib.filter(i => !idsToDelete.includes(i.id));
+                } else {
+                    lib = lib.filter(i => i.id !== id);
+                }
+                
                 localStorage.setItem('mcq_hub_library', JSON.stringify(lib));
                 loadLibrary();
             }
@@ -1042,32 +1134,6 @@ Now convert the following content into this format:`;
                 alert("Failed to copy automatically. Please manually copy the prompt.");
             }
             document.body.removeChild(textArea);
-        }
-
-        // NEW: Handle File Upload Logic
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            // Create a FileReader to read the file
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const content = e.target.result;
-                // Put the content into the textarea
-                document.getElementById('combined-input').value = content;
-                showToast("✅ File Loaded! Click 'Bismillah' to start.");
-            };
-            
-            reader.onerror = function() {
-                showToast("❌ Error reading file. Please try again.");
-            };
-
-            // Read the file as text
-            reader.readAsText(file);
-            
-            // Reset the input so the same file can be selected again if needed
-            event.target.value = '';
         }
 
         // NEW: Toast Notification Function
@@ -1281,6 +1347,32 @@ ${optionsText}`;
                 showView('quiz-view');
                 showQuestion();
             }
+        }
+
+        // NEW: Handle File Upload Logic
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Create a FileReader to read the file
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                // Put the content into the textarea
+                document.getElementById('combined-input').value = content;
+                showToast("✅ File Loaded! Click 'Bismillah' to start.");
+            };
+            
+            reader.onerror = function() {
+                showToast("❌ Error reading file. Please try again.");
+            };
+
+            // Read the file as text
+            reader.readAsText(file);
+            
+            // Reset the input so the same file can be selected again if needed
+            event.target.value = '';
         }
 
         document.addEventListener('keydown', (e) => {
