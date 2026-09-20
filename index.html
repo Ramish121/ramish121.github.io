@@ -379,11 +379,17 @@
                                  <p id="timer-text" class="text-xl font-mono font-bold text-primary-600 dark:text-primary-400">00:30</p>
                             </div>
                             <!-- Desktop ID Box for Remote -->
-<!-- QR Code Button (Settings se ON karne par dikhega) -->
-<button id="show-qr-btn" onclick="openRemoteQR()" class="hidden flex-col items-center bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-4 py-1 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 transition-colors">
-    <p class="text-[9px] uppercase font-black text-blue-600 dark:text-blue-400">Remote</p>
-    <p class="text-sm font-bold text-blue-700 dark:text-blue-300">📱 Scan QR</p>
-</button>
+<!-- Multiplayer QR Buttons -->
+<div id="multiplayer-qr-btns" class="hidden items-center gap-2">
+    <button onclick="openRemoteQR('player')" class="flex flex-col items-center bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 transition-colors">
+        <p class="text-[9px] uppercase font-black text-blue-600 dark:text-blue-400">Players</p>
+        <p class="text-sm font-bold text-blue-700 dark:text-blue-300">👥 QR</p>
+    </button>
+    <button onclick="openRemoteQR('host')" class="flex flex-col items-center bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-xl shadow-sm border border-purple-200 dark:border-purple-800 transition-colors">
+        <p class="text-[9px] uppercase font-black text-purple-600 dark:text-purple-400">Admin</p>
+        <p class="text-sm font-bold text-purple-700 dark:text-purple-300">👑 QR</p>
+    </button>
+</div>
                         </div>
                         <span id="score-text" class="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-lg text-xs font-bold self-center">Score: 0</span>
                     </div>
@@ -453,6 +459,15 @@
                     <div class="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-primary-600">Attempted</p><p id="final-attempted" class="text-3xl font-black text-primary-800 dark:text-primary-300">0</p></div>
                     <div class="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl"><p class="text-[10px] uppercase font-black text-primary-600">Accuracy</p><p id="final-accuracy" class="text-3xl font-black text-primary-800 dark:text-primary-300">0%</p></div>
                 </div>
+                <!-- MULTIPLAYER LEADERBOARD (Hidden by default) -->
+                <div id="multiplayer-leaderboard-container" class="hidden w-full max-w-2xl mx-auto mb-8 fade-in">
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-4 uppercase tracking-widest text-center">🏆 Final Rankings</h3>
+                        <div id="leaderboard-list" class="flex flex-col gap-3">
+                            <!-- Yahan JavaScript automatically ranks daalega -->
+                        </div>
+                    </div>
+                </div>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <button id="practice-wrong-btn" onclick="startWrongQuestionsPractice()" class="hidden bg-red-600 text-white px-8 py-4 rounded-2xl font-bold">🎯 Practice Mistakes</button>
                     <button onclick="showReviewScreen()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold">🔍 Review Answers</button>
@@ -493,33 +508,46 @@
         </div>
     </div>
 
-    <!-- REMOTE CONTROLLER VIEW (Hidden by default) -->
-    <div id="remote-view" class="hidden fixed inset-0 bg-slate-900 z-[100] flex flex-col p-6 text-white h-[100dvh]">
-        <div class="text-center mb-8 shrink-0 mt-4">
-            <h2 class="text-3xl font-black text-blue-400 mb-2">Remote Control</h2>
-            <p id="remote-status" class="text-sm text-slate-400">Not Connected</p>
-        </div>
-        
-        <!-- Connection Box (ID dalne ki jagah) -->
-        <div id="remote-connect-box" class="flex flex-col gap-4 mb-8">
-            <input type="text" id="connect-id-input" placeholder="Enter Desktop ID" class="p-4 rounded-xl text-slate-900 font-mono text-center text-xl outline-none">
-            <button onclick="connectToDesktop()" class="bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold text-xl transition-colors">Connect</button>
+    <!-- MULTIPLAYER REMOTE CONTROLLER VIEW -->
+<div id="remote-view" class="hidden fixed inset-0 bg-slate-900 z-[100] flex flex-col p-6 text-white h-[100dvh] overflow-y-auto">
+    <div class="text-center mb-6 shrink-0 mt-2">
+        <h2 id="remote-title" class="text-3xl font-black text-blue-400 mb-1">RAMISH Quiz</h2>
+        <p id="remote-status" class="text-sm text-slate-400">Not Connected</p>
+    </div>
+    
+    <!-- Join Box (Name Entry for Host & Player) -->
+    <div id="player-join-box" class="flex flex-col gap-4 mb-8 mt-10 max-w-sm mx-auto w-full">
+        <h3 id="join-heading" class="text-xl font-bold text-center text-white mb-2">Join the Quiz!</h3>
+        <input type="text" id="connect-id-input" placeholder="Desktop ID" class="hidden p-3 rounded-xl text-slate-900 font-mono text-center text-lg outline-none">
+        <input type="text" id="player-name-input" placeholder="Enter your Name" class="p-4 rounded-xl text-slate-900 font-bold text-center text-xl outline-none border-4 border-transparent focus:border-blue-500">
+        <button onclick="connectToDesktop()" class="bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-black text-xl transition-colors shadow-[0_4px_0_rgb(37,99,235)] active:shadow-none active:translate-y-1">Start 🚀</button>
+    </div>
+
+    <!-- Gameplay Controls (Hidden initially) -->
+    <div id="gameplay-controls" class="hidden flex-1 flex-col gap-4 max-w-sm mx-auto w-full">
+        <!-- Host Player Count -->
+        <div id="host-stats" class="hidden bg-slate-800 p-3 rounded-2xl border border-slate-700 text-center shrink-0">
+            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Total Players</p>
+            <p id="host-player-count" class="text-2xl font-black text-purple-400">1</p>
         </div>
 
-        <!-- Remote Buttons (Jab connect ho jayega tab dikhenge) -->
-        <div id="remote-buttons" class="hidden flex-1 flex flex-col gap-4">
-            <div class="grid grid-cols-2 gap-4 flex-1">
-                <button onclick="sendRemoteCommand('A')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">A</button>
-                <button onclick="sendRemoteCommand('B')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">B</button>
-                <button onclick="sendRemoteCommand('C')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">C</button>
-                <button onclick="sendRemoteCommand('D')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">D</button>
-            </div>
-            <div class="grid grid-cols-2 gap-4 shrink-0 h-24">
-                <button onclick="sendRemoteCommand('BACK')" class="bg-slate-700 rounded-2xl text-xl font-bold active:bg-slate-500 transition-colors">Back</button>
-                <button onclick="sendRemoteCommand('NEXT')" class="bg-blue-600 rounded-2xl text-xl font-bold active:bg-blue-500 transition-colors">Next</button>
+        <!-- A, B, C, D Buttons (For both Host and Player) -->
+        <div class="grid grid-cols-2 gap-3 flex-1 max-h-[300px]">
+            <button onclick="sendPlayerAnswer('a')" class="bg-red-500 rounded-2xl text-4xl font-black active:bg-red-700 transition-colors shadow-[0_5px_0_rgb(185,28,28)] active:shadow-none active:translate-y-[5px]">A</button>
+            <button onclick="sendPlayerAnswer('b')" class="bg-blue-500 rounded-2xl text-4xl font-black active:bg-blue-700 transition-colors shadow-[0_5px_0_rgb(29,78,216)] active:shadow-none active:translate-y-[5px]">B</button>
+            <button onclick="sendPlayerAnswer('c')" class="bg-yellow-500 rounded-2xl text-4xl font-black active:bg-yellow-700 transition-colors shadow-[0_5px_0_rgb(161,98,7)] active:shadow-none active:translate-y-[5px]">C</button>
+            <button onclick="sendPlayerAnswer('d')" class="bg-green-500 rounded-2xl text-4xl font-black active:bg-green-700 transition-colors shadow-[0_5px_0_rgb(21,128,61)] active:shadow-none active:translate-y-[5px]">D</button>
+        </div>
+
+        <!-- Host Extra Controls -->
+        <div id="host-extra-controls" class="hidden flex-col gap-3 shrink-0">
+            <div class="grid grid-cols-2 gap-3 h-16">
+                <button onclick="sendRemoteCommand('BACK')" class="bg-slate-700 rounded-2xl text-lg font-bold active:bg-slate-500 transition-colors">Back</button>
+                <button onclick="sendRemoteCommand('NEXT')" class="bg-purple-600 rounded-2xl text-lg font-bold active:bg-purple-800 transition-colors shadow-[0_4px_0_rgb(107,33,168)] active:shadow-none active:translate-y-1">Next</button>
             </div>
         </div>
     </div>
+</div>
 
     <script>
         // --- State Variables ---
@@ -908,6 +936,10 @@
             document.getElementById('final-accuracy').innerText = `${Math.round((score/questions.length)*100)}%`;
             
             document.getElementById('practice-wrong-btn').classList.toggle('hidden', score === questions.length);
+            // Agar multiplayer mode chal raha tha, toh leaderboard dikhao
+            if (Object.keys(multiPlayers).length > 0) {
+                showLeaderboard();
+            }
             showView('result-view');
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
@@ -1450,109 +1482,170 @@ ${optionsText}`;
                 nextOrFinish();
             }
         });
-       // --- PRO REMOTE CONTROL LOGIC (PeerJS + QR Auto-Connect) ---
+      // --- MULTIPLAYER REMOTE CONTROL LOGIC ---
         let peer = null;
         let remoteConnection = null;
         const urlParams = new URLSearchParams(window.location.search);
         const isRemoteMode = urlParams.get('mode') === 'remote';
-        const autoConnectId = urlParams.get('peerId'); // QR code ke link se ID nikalna
+        const autoConnectId = urlParams.get('peerId'); 
+        const userRole = urlParams.get('role') || 'player'; 
+
+        let playerName = ""; 
+        
+        // Multiplayer Tracking State
+        let multiPlayers = {}; // Sabke scores yahan save honge
+        let totalConnected = 0;
+        let answersThisTurn = 0;
+        let answeredPlayersThisTurn = new Set(); 
 
         // 1. Settings Toggle Logic
         function handleRemoteSettingChange() {
             const isEnabled = document.getElementById('remote-toggle').checked;
             const desc = document.getElementById('remote-desc');
-            const qrBtn = document.getElementById('show-qr-btn');
+            const qrBtns = document.getElementById('multiplayer-qr-btns');
             
             if (isEnabled) {
-                if(desc) desc.innerHTML = `<span class="text-blue-600 font-bold">Active:</span> Button visible.`;
-                if(qrBtn) { qrBtn.classList.remove('hidden'); qrBtn.classList.add('flex'); }
+                if(desc) desc.innerHTML = `<span class="text-blue-600 font-bold">Active:</span> Multiplayer ON.`;
+                if(qrBtns) { qrBtns.classList.remove('hidden'); qrBtns.classList.add('flex'); }
             } else {
                 if(desc) desc.innerHTML = `<span class="text-slate-400">Inactive:</span> Remote off.`;
-                if(qrBtn) { qrBtn.classList.add('hidden'); qrBtn.classList.remove('flex'); }
+                if(qrBtns) { qrBtns.classList.add('hidden'); qrBtns.classList.remove('flex'); }
             }
         }
 
         // 2. QR Modal Functions
-        function openRemoteQR() {
+        function openRemoteQR(role) {
             document.getElementById('qr-modal').classList.remove('hidden');
+            if(peer && peer.id) {
+                const magicUrl = `${window.location.origin}${window.location.pathname}?mode=remote&peerId=${peer.id}&role=${role}`;
+                const qrContainer = document.getElementById('qrcode-container');
+                qrContainer.innerHTML = ''; 
+                new QRCode(qrContainer, {
+                    text: magicUrl,
+                    width: 160, height: 160,
+                    colorDark : "#0f172a", colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }
         }
-        function closeRemoteQR() {
-            document.getElementById('qr-modal').classList.add('hidden');
-        }
+        function closeRemoteQR() { document.getElementById('qr-modal').classList.add('hidden'); }
 
-        // 3. Main Desktop Initialization
+        // 3. Main Desktop Initialization (The Server)
         function initPeer() {
             peer = new Peer(); 
-
-            peer.on('open', function(id) {
-                // QR Code ke liye magic URL banana (jisme aapki ID pehle se ho)
-                const currentUrl = window.location.origin + window.location.pathname;
-                const magicUrl = `${currentUrl}?mode=remote&peerId=${id}`;
-                
-                // QR Code generate karna
-                const qrContainer = document.getElementById('qrcode-container');
-                if(qrContainer) {
-                    qrContainer.innerHTML = ''; 
-                    new QRCode(qrContainer, {
-                        text: magicUrl,
-                        width: 160,
-                        height: 160,
-                        colorDark : "#0f172a", // slate-900
-                        colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                }
-            });
-
-            // Jab mobile connect ho jaye
             peer.on('connection', function(conn) {
-                remoteConnection = conn;
-                showToast("📱 Mobile Remote Connected!");
-                
-                const statusText = document.getElementById('qr-status-text');
-                if(statusText) {
-                    statusText.innerText = "✅ Connected Successfully!";
-                    statusText.classList.replace('text-slate-400', 'text-green-500');
-                    statusText.classList.remove('animate-pulse');
-                }
-                
-                setTimeout(closeRemoteQR, 1500); // Connection ke baad popup apne aap band
-                
-                conn.on('data', function(command) {
-                    handleRemoteCommand(command);
+                conn.on('data', function(data) {
+                    if (data.type === 'join') {
+                        // Agar player pehle se juda tha (page refresh kiya), toh double count na ho
+                        if (!multiPlayers[data.name]) {
+                            totalConnected++;
+                        }
+                        multiPlayers[data.name] = { score: multiPlayers[data.name]?.score || 0 };
+                        showToast("👤 " + data.name + " Joined!");
+                        
+                        // Sirf Host UI mein count dikhane ke liye
+                        const countEl = document.getElementById('host-player-count');
+                        if(countEl) countEl.innerText = totalConnected;
+                    } 
+                    else if (data.type === 'answer') {
+                        handleMultiplayerAnswer(data.name, data.option);
+                    } 
+                    else if (data.type === 'cmd') {
+                        handleRemoteCommand(data.cmd);
+                    }
                 });
             });
         }
 
+        // Multiplayer Answer Tracking Logic
+        function handleMultiplayerAnswer(name, option) {
+            if(document.getElementById('quiz-view').classList.contains('hidden')) return;
+            
+            // Ek player ek question par do baar click na kar sake
+            if(answeredPlayersThisTurn.has(name)) return;
+            answeredPlayersThisTurn.add(name);
+
+            showToast("✅ " + name + " answered!");
+
+            // Check correct answer and add score (Case-insensitive matching)
+            const q = questions[currentIndex];
+            if (option.toLowerCase() === q.correctAnswer.toLowerCase()) {
+                multiPlayers[name].score += 1;
+            }
+
+            answersThisTurn++;
+
+            // Smart Auto-Shift: Agar sabne answer de diya
+            if (answersThisTurn >= totalConnected && totalConnected > 0) {
+                showToast("⏳ Everyone answered! Next in 3 sec...");
+                
+                // Desktop par correct answer highlight karna
+                const btns = document.querySelectorAll('#options-container button');
+                q.options.forEach((opt, index) => {
+                    if(opt.label.toLowerCase() === q.correctAnswer.toLowerCase() && btns[index]) {
+                        btns[index].classList.add('correct');
+                    }
+                });
+
+                // Values reset karo agle question ke liye
+                answersThisTurn = 0;
+                answeredPlayersThisTurn.clear();
+                
+                // 3 second baad automatic next
+                setTimeout(() => {
+                    nextOrFinish();
+                }, 3000);
+            }
+        }
+
+        // Host Manual Commands
         function handleRemoteCommand(command) {
             if(document.getElementById('quiz-view').classList.contains('hidden')) return;
-            const btns = document.querySelectorAll('#options-container button');
+            // Agar host manually NEXT dabaye toh aage badh jao
+            if(command === 'NEXT') {
+                answersThisTurn = 0;
+                answeredPlayersThisTurn.clear();
+                nextOrFinish();
+            }
+            if(command === 'BACK') {
+                answersThisTurn = 0;
+                answeredPlayersThisTurn.clear();
+                prevQuestion();
+            }
             
-            if(command === 'A' && btns[0] && !btns[0].disabled) btns[0].click();
-            if(command === 'B' && btns[1] && !btns[1].disabled) btns[1].click();
-            if(command === 'C' && btns[2] && !btns[2].disabled) btns[2].click();
-            if(command === 'D' && btns[3] && !btns[3].disabled) btns[3].click();
-            
-            if(command === 'NEXT') nextOrFinish();
-            if(command === 'BACK') prevQuestion();
+            if(command === 'SHOW_LEADERBOARD') {
+                showResults();
+            }
         }
 
         // 4. Mobile Remote Logic
         function connectToDesktop() {
+            playerName = document.getElementById('player-name-input').value.trim();
+            if(!playerName) return alert("Please enter your name first!");
+
             const targetId = document.getElementById('connect-id-input').value.trim();
-            if(!targetId) return alert("Desktop ID nahi mili!");
+            if(!targetId) return alert("Desktop ID missing!");
 
             document.getElementById('remote-status').innerText = "Connecting...";
             remoteConnection = peer.connect(targetId);
             
             remoteConnection.on('open', function() {
-                document.getElementById('remote-status').innerText = "✅ Connected";
+                remoteConnection.send({ type: 'join', name: playerName, role: userRole });
+
+                document.getElementById('remote-status').innerText = "👤 " + playerName;
                 document.getElementById('remote-status').classList.replace('text-slate-400', 'text-green-400');
-                document.getElementById('remote-connect-box').classList.add('hidden');
                 
-                const btnContainer = document.getElementById('remote-buttons');
-                btnContainer.classList.remove('hidden');
-                btnContainer.classList.add('flex');
+                document.getElementById('player-join-box').classList.add('hidden');
+                document.getElementById('gameplay-controls').classList.remove('hidden');
+                document.getElementById('gameplay-controls').classList.add('flex');
+
+                if (userRole === 'host') {
+                    document.getElementById('host-extra-controls').classList.remove('hidden');
+                    document.getElementById('host-extra-controls').classList.add('flex');
+                    document.getElementById('host-stats').classList.remove('hidden');
+                    document.getElementById('remote-title').innerText = "Admin Panel";
+                    document.getElementById('remote-title').classList.replace('text-blue-400', 'text-purple-400');
+                }
             });
 
             remoteConnection.on('error', function(err) {
@@ -1560,9 +1653,28 @@ ${optionsText}`;
             });
         }
 
+        // Mobile se Option A,B,C,D bhejne ka function
+        function sendPlayerAnswer(option) {
+            if(remoteConnection && remoteConnection.open) {
+                remoteConnection.send({ type: 'answer', option: option, name: playerName });
+                if (navigator.vibrate) navigator.vibrate(50);
+                
+                // Mobile screen par chhota sa feedback
+                const titleEl = document.getElementById('remote-title');
+                const oldTitle = titleEl.innerText;
+                titleEl.innerText = "Sent! 🚀";
+                titleEl.classList.add('text-green-400');
+                
+                setTimeout(() => {
+                    titleEl.innerText = oldTitle;
+                    titleEl.classList.remove('text-green-400');
+                }, 1500);
+            }
+        }
+
         function sendRemoteCommand(cmd) {
             if(remoteConnection && remoteConnection.open) {
-                remoteConnection.send(cmd);
+                remoteConnection.send({ type: 'cmd', cmd: cmd, name: playerName });
                 if (navigator.vibrate) navigator.vibrate(50);
             }
         }
@@ -1573,27 +1685,75 @@ ${optionsText}`;
             loadSettingsFromStorage(); 
             loadLibrary();
 
-            // Mobile Mode: Baaki sab chhupao, remote dikhao aur auto-connect karo
             if(isRemoteMode) {
                 document.getElementById('app').style.display = 'none'; 
                 document.getElementById('remote-view').classList.remove('hidden');
                 
                 peer = new Peer(); 
-                peer.on('open', function() {
-                    // Agar QR Code se scan kiya hai, toh box mein khud ID daalo aur connect kar do
-                    if(autoConnectId) {
-                        document.getElementById('connect-id-input').value = autoConnectId;
-                        connectToDesktop();
-                    }
-                });
+                if(autoConnectId) {
+                    document.getElementById('connect-id-input').value = autoConnectId;
+                } else {
+                    document.getElementById('connect-id-input').classList.remove('hidden');
+                }
+                
+                if (userRole === 'host') {
+                    document.getElementById('join-heading').innerText = "👑 Host Setup";
+                }
             } else {
-                // Desktop Mode: Peer shuru karo aur settings UI update karo
                 initPeer();
                 if(document.getElementById('remote-toggle')) {
                     handleRemoteSettingChange();
                 }
             }
         };
+
+        // 6. Multiplayer Leaderboard Function (STEP 2 YAHAN HAI)
+        function showLeaderboard() {
+            const lbContainer = document.getElementById('multiplayer-leaderboard-container');
+            const lbList = document.getElementById('leaderboard-list');
+            
+            if(!lbContainer || !lbList) return;
+            
+            lbContainer.classList.remove('hidden');
+            lbList.innerHTML = '';
+            
+            // Sabhi players ke data ko array mein convert karke score ke hisaab se sort karna
+            const playersArray = Object.keys(multiPlayers).map(name => {
+                return { name: name, score: multiPlayers[name].score };
+            });
+            
+            playersArray.sort((a, b) => b.score - a.score); // Highest score sabse upar
+            
+            playersArray.forEach((player, index) => {
+                let medal = '🏅';
+                let bgClass = 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-700';
+                
+                // Top 3 ke liye special colors aur medals
+                if(index === 0) { medal = '🥇'; bgClass = 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-400 shadow-md transform scale-105 z-10 relative'; }
+                else if(index === 1) { medal = '🥈'; bgClass = 'bg-slate-200 dark:bg-slate-700/50 border-slate-400'; }
+                else if(index === 2) { medal = '🥉'; bgClass = 'bg-orange-100 dark:bg-orange-900/30 border-orange-400'; }
+                
+                const item = document.createElement('div');
+                item.className = `flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${bgClass}`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="text-3xl">${medal}</span>
+                        <span class="text-xl font-bold text-slate-800 dark:text-slate-100">${player.name}</span>
+                    </div>
+                    <div class="text-2xl font-black text-primary-600 dark:text-primary-400">
+                        ${player.score} <span class="text-sm text-slate-500 font-bold uppercase">Pts</span>
+                    </div>
+                `;
+                lbList.appendChild(item);
+            });
+
+            // Normal single-player result boxes ko hide kar do
+            const normalStats = document.querySelector('#result-view .grid.sm\\:grid-cols-4');
+            if(normalStats) normalStats.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
