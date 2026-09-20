@@ -11,6 +11,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Canvas Confetti for celebration -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- PeerJS for Remote Control -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         // Tailwind Configuration with Dynamic Primary Color
         tailwind.config = {
@@ -344,6 +348,14 @@
                             <div id="timer-input-container" class="hidden"><input id="timer-setting" type="number" value="30" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Seconds" onchange="saveSettingsToStorage()"></div>
                         </div>
                     </div>
+                    <!-- Remote Control Setting -->
+                        <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 mt-4">
+                            <div>
+                                <label class="font-bold flex items-center gap-2">📱 Mobile Remote</label>
+                                <span id="remote-desc" class="text-xs text-slate-500 block transition-all duration-300">Control test from phone</span>
+                            </div>
+                            <input type="checkbox" id="remote-toggle" class="w-5 h-5 accent-blue-600" onchange="handleRemoteSettingChange(); saveSettingsToStorage()">
+                        </div>
                     <button onclick="closeSettings()" class="w-full mt-8 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl shadow-lg">Done</button>
                 </div>
             </div>
@@ -366,6 +378,12 @@
                                  <p class="text-[9px] uppercase font-black text-slate-400">Time Left</p>
                                  <p id="timer-text" class="text-xl font-mono font-bold text-primary-600 dark:text-primary-400">00:30</p>
                             </div>
+                            <!-- Desktop ID Box for Remote -->
+<!-- QR Code Button (Settings se ON karne par dikhega) -->
+<button id="show-qr-btn" onclick="openRemoteQR()" class="hidden flex-col items-center bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-4 py-1 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 transition-colors">
+    <p class="text-[9px] uppercase font-black text-blue-600 dark:text-blue-400">Remote</p>
+    <p class="text-sm font-bold text-blue-700 dark:text-blue-300">📱 Scan QR</p>
+</button>
                         </div>
                         <span id="score-text" class="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-lg text-xs font-bold self-center">Score: 0</span>
                     </div>
@@ -459,6 +477,49 @@
     </div>
 
     <div class="hidden bg-gradient-to-r from-green-400 to-green-600 shadow-[0_0_10px_rgba(34,197,94,0.5)] shadow-lg shadow-green-500/50"></div>
+
+    <!-- QR Code Modal (Laptop par dikhega) -->
+    <div id="qr-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center fade-in backdrop-blur-sm p-4" onclick="if(event.target === this) closeRemoteQR()">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl p-8 border border-slate-100 dark:border-slate-800 text-center relative">
+            <button onclick="closeRemoteQR()" class="absolute top-4 right-5 text-slate-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            <h3 class="text-2xl font-black text-blue-600 dark:text-blue-400 mb-2">Scan to Connect</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Open your phone's camera and scan this QR code to control the test.</p>
+            
+            <div class="bg-white p-4 rounded-2xl inline-block shadow-sm border border-slate-200 mb-4">
+                <div id="qrcode-container"></div> <!-- QR Code yahan banega -->
+            </div>
+            
+            <p id="qr-status-text" class="text-xs font-bold text-slate-400 animate-pulse">Waiting for connection...</p>
+        </div>
+    </div>
+
+    <!-- REMOTE CONTROLLER VIEW (Hidden by default) -->
+    <div id="remote-view" class="hidden fixed inset-0 bg-slate-900 z-[100] flex flex-col p-6 text-white h-[100dvh]">
+        <div class="text-center mb-8 shrink-0 mt-4">
+            <h2 class="text-3xl font-black text-blue-400 mb-2">Remote Control</h2>
+            <p id="remote-status" class="text-sm text-slate-400">Not Connected</p>
+        </div>
+        
+        <!-- Connection Box (ID dalne ki jagah) -->
+        <div id="remote-connect-box" class="flex flex-col gap-4 mb-8">
+            <input type="text" id="connect-id-input" placeholder="Enter Desktop ID" class="p-4 rounded-xl text-slate-900 font-mono text-center text-xl outline-none">
+            <button onclick="connectToDesktop()" class="bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold text-xl transition-colors">Connect</button>
+        </div>
+
+        <!-- Remote Buttons (Jab connect ho jayega tab dikhenge) -->
+        <div id="remote-buttons" class="hidden flex-1 flex flex-col gap-4">
+            <div class="grid grid-cols-2 gap-4 flex-1">
+                <button onclick="sendRemoteCommand('A')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">A</button>
+                <button onclick="sendRemoteCommand('B')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">B</button>
+                <button onclick="sendRemoteCommand('C')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">C</button>
+                <button onclick="sendRemoteCommand('D')" class="bg-slate-800 rounded-2xl text-4xl font-black active:bg-blue-600 transition-colors">D</button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 shrink-0 h-24">
+                <button onclick="sendRemoteCommand('BACK')" class="bg-slate-700 rounded-2xl text-xl font-bold active:bg-slate-500 transition-colors">Back</button>
+                <button onclick="sendRemoteCommand('NEXT')" class="bg-blue-600 rounded-2xl text-xl font-bold active:bg-blue-500 transition-colors">Next</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // --- State Variables ---
@@ -1312,7 +1373,8 @@ ${optionsText}`;
                 shuffle: document.getElementById('shuffle-toggle').checked,
                 palette: document.getElementById('palette-toggle').checked,
                 timer: document.getElementById('timer-toggle').checked,
-                timerVal: document.getElementById('timer-setting').value
+                timerVal: document.getElementById('timer-setting').value,
+                remote: document.getElementById('remote-toggle').checked // NAYI LINE
             };
             localStorage.setItem('mcq_hub_settings_pref', JSON.stringify(settings));
         }
@@ -1327,6 +1389,7 @@ ${optionsText}`;
                     if(document.getElementById('palette-toggle')) document.getElementById('palette-toggle').checked = s.palette;
                     if(document.getElementById('timer-toggle')) document.getElementById('timer-toggle').checked = s.timer;
                     if(document.getElementById('timer-setting')) document.getElementById('timer-setting').value = s.timerVal || 30;
+                    if(document.getElementById('remote-toggle') && s.remote !== undefined) document.getElementById('remote-toggle').checked = s.remote; // NAYI LINE
                 } catch(e) {
                     console.error("Error loading settings", e);
                 }
@@ -1387,11 +1450,149 @@ ${optionsText}`;
                 nextOrFinish();
             }
         });
+       // --- PRO REMOTE CONTROL LOGIC (PeerJS + QR Auto-Connect) ---
+        let peer = null;
+        let remoteConnection = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRemoteMode = urlParams.get('mode') === 'remote';
+        const autoConnectId = urlParams.get('peerId'); // QR code ke link se ID nikalna
 
+        // 1. Settings Toggle Logic
+        function handleRemoteSettingChange() {
+            const isEnabled = document.getElementById('remote-toggle').checked;
+            const desc = document.getElementById('remote-desc');
+            const qrBtn = document.getElementById('show-qr-btn');
+            
+            if (isEnabled) {
+                if(desc) desc.innerHTML = `<span class="text-blue-600 font-bold">Active:</span> Button visible.`;
+                if(qrBtn) { qrBtn.classList.remove('hidden'); qrBtn.classList.add('flex'); }
+            } else {
+                if(desc) desc.innerHTML = `<span class="text-slate-400">Inactive:</span> Remote off.`;
+                if(qrBtn) { qrBtn.classList.add('hidden'); qrBtn.classList.remove('flex'); }
+            }
+        }
+
+        // 2. QR Modal Functions
+        function openRemoteQR() {
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+        function closeRemoteQR() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
+
+        // 3. Main Desktop Initialization
+        function initPeer() {
+            peer = new Peer(); 
+
+            peer.on('open', function(id) {
+                // QR Code ke liye magic URL banana (jisme aapki ID pehle se ho)
+                const currentUrl = window.location.origin + window.location.pathname;
+                const magicUrl = `${currentUrl}?mode=remote&peerId=${id}`;
+                
+                // QR Code generate karna
+                const qrContainer = document.getElementById('qrcode-container');
+                if(qrContainer) {
+                    qrContainer.innerHTML = ''; 
+                    new QRCode(qrContainer, {
+                        text: magicUrl,
+                        width: 160,
+                        height: 160,
+                        colorDark : "#0f172a", // slate-900
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                }
+            });
+
+            // Jab mobile connect ho jaye
+            peer.on('connection', function(conn) {
+                remoteConnection = conn;
+                showToast("📱 Mobile Remote Connected!");
+                
+                const statusText = document.getElementById('qr-status-text');
+                if(statusText) {
+                    statusText.innerText = "✅ Connected Successfully!";
+                    statusText.classList.replace('text-slate-400', 'text-green-500');
+                    statusText.classList.remove('animate-pulse');
+                }
+                
+                setTimeout(closeRemoteQR, 1500); // Connection ke baad popup apne aap band
+                
+                conn.on('data', function(command) {
+                    handleRemoteCommand(command);
+                });
+            });
+        }
+
+        function handleRemoteCommand(command) {
+            if(document.getElementById('quiz-view').classList.contains('hidden')) return;
+            const btns = document.querySelectorAll('#options-container button');
+            
+            if(command === 'A' && btns[0] && !btns[0].disabled) btns[0].click();
+            if(command === 'B' && btns[1] && !btns[1].disabled) btns[1].click();
+            if(command === 'C' && btns[2] && !btns[2].disabled) btns[2].click();
+            if(command === 'D' && btns[3] && !btns[3].disabled) btns[3].click();
+            
+            if(command === 'NEXT') nextOrFinish();
+            if(command === 'BACK') prevQuestion();
+        }
+
+        // 4. Mobile Remote Logic
+        function connectToDesktop() {
+            const targetId = document.getElementById('connect-id-input').value.trim();
+            if(!targetId) return alert("Desktop ID nahi mili!");
+
+            document.getElementById('remote-status').innerText = "Connecting...";
+            remoteConnection = peer.connect(targetId);
+            
+            remoteConnection.on('open', function() {
+                document.getElementById('remote-status').innerText = "✅ Connected";
+                document.getElementById('remote-status').classList.replace('text-slate-400', 'text-green-400');
+                document.getElementById('remote-connect-box').classList.add('hidden');
+                
+                const btnContainer = document.getElementById('remote-buttons');
+                btnContainer.classList.remove('hidden');
+                btnContainer.classList.add('flex');
+            });
+
+            remoteConnection.on('error', function(err) {
+                document.getElementById('remote-status').innerText = "❌ Connection Failed";
+            });
+        }
+
+        function sendRemoteCommand(cmd) {
+            if(remoteConnection && remoteConnection.open) {
+                remoteConnection.send(cmd);
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+        }
+
+        // 5. On Load Setup
         window.onload = function() {
             updateFolderSelectDropdown();
             loadSettingsFromStorage(); 
             loadLibrary();
+
+            // Mobile Mode: Baaki sab chhupao, remote dikhao aur auto-connect karo
+            if(isRemoteMode) {
+                document.getElementById('app').style.display = 'none'; 
+                document.getElementById('remote-view').classList.remove('hidden');
+                
+                peer = new Peer(); 
+                peer.on('open', function() {
+                    // Agar QR Code se scan kiya hai, toh box mein khud ID daalo aur connect kar do
+                    if(autoConnectId) {
+                        document.getElementById('connect-id-input').value = autoConnectId;
+                        connectToDesktop();
+                    }
+                });
+            } else {
+                // Desktop Mode: Peer shuru karo aur settings UI update karo
+                initPeer();
+                if(document.getElementById('remote-toggle')) {
+                    handleRemoteSettingChange();
+                }
+            }
         };
     </script>
 </body>
