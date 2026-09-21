@@ -382,7 +382,7 @@
 <!-- Multiplayer QR Buttons -->
 <div id="multiplayer-qr-btns" class="hidden items-center gap-2">
     <button onclick="openRemoteQR('player')" class="flex flex-col items-center bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 transition-colors">
-        <p class="text-[9px] uppercase font-black text-blue-600 dark:text-blue-400">Players</p>
+        <p class="text-[9px] uppercase font-black text-blue-600 dark:text-blue-400">Participants</p>
         <p class="text-sm font-bold text-blue-700 dark:text-blue-300">👥 QR</p>
     </button>
     <button onclick="openRemoteQR('host')" class="flex flex-col items-center bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-xl shadow-sm border border-purple-200 dark:border-purple-800 transition-colors">
@@ -396,6 +396,10 @@
                     <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">
                         <div id="progress-bar" class="bg-primary-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
+                </div>
+                <!-- Live Player HUD -->
+                <div id="player-hud" class="flex flex-wrap gap-2 mb-3 justify-center min-h-[28px]">
+                    <!-- Player badges JS se yahan aayenge -->
                 </div>
                 <div id="question-card" class="flex-1 overflow-y-auto custom-scroll bg-white dark:bg-slate-900 shadow-lg rounded-2xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 min-h-0">
                     
@@ -487,6 +491,17 @@
         </main>
     </div>
 
+    <!-- NAYA: Mid-Game Standings Overlay -->
+    <div id="mid-game-standings" class="hidden fixed inset-0 bg-slate-900/90 z-[60] flex items-center justify-center backdrop-blur-sm p-4 fade-in">
+        <div class="bg-slate-800 rounded-3xl p-8 border border-purple-500/50 shadow-[0_0_40px_rgba(168,85,247,0.3)] text-center w-full max-w-lg">
+            <h2 class="text-2xl font-black text-purple-400 mb-6 uppercase tracking-widest">🏆 Current Standings</h2>
+            <div id="mid-game-list" class="flex flex-col gap-3">
+                <!-- Top 3 players JS se aayenge -->
+            </div>
+            <p class="text-slate-400 mt-6 text-sm font-bold">Resuming quiz in <span id="mid-game-timer" class="text-purple-400 text-lg">5</span>s...</p>
+        </div>
+    </div>
+
     <div id="toast-notification" class="fixed bottom-12 left-1/2 transform -translate-x-1/2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-4 py-2 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none z-50 flex items-center gap-2 font-bold text-xs border border-slate-700 dark:border-slate-200 whitespace-nowrap">
         <span id="toast-text">Notification</span>
     </div>
@@ -508,14 +523,21 @@
         </div>
     </div>
 
-    <!-- MULTIPLAYER REMOTE CONTROLLER VIEW -->
+   <!-- MULTIPLAYER REMOTE CONTROLLER VIEW -->
 <div id="remote-view" class="hidden fixed inset-0 bg-slate-900 z-[100] flex flex-col p-6 text-white h-[100dvh] overflow-y-auto">
-    <div class="text-center mb-6 shrink-0 mt-2">
+    
+    <!-- Header & Streak Badge -->
+    <div class="text-center mb-6 shrink-0 mt-2 relative">
         <h2 id="remote-title" class="text-3xl font-black text-blue-400 mb-1">RAMISH Quiz</h2>
         <p id="remote-status" class="text-sm text-slate-400">Not Connected</p>
+        
+        <!-- NAYA: Streak Badge (Hidden initially) -->
+        <div id="streak-badge" class="hidden absolute top-0 right-0 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-black shadow-[0_0_15px_rgba(249,115,22,0.6)] animate-bounce border-2 border-orange-300">
+            🔥 <span id="streak-count">3</span>x STREAK
+        </div>
     </div>
     
-    <!-- Join Box (Name Entry for Host & Player) -->
+    <!-- Join Box -->
     <div id="player-join-box" class="flex flex-col gap-4 mb-8 mt-10 max-w-sm mx-auto w-full">
         <h3 id="join-heading" class="text-xl font-bold text-center text-white mb-2">Join the Quiz!</h3>
         <input type="text" id="connect-id-input" placeholder="Desktop ID" class="hidden p-3 rounded-xl text-slate-900 font-mono text-center text-lg outline-none">
@@ -523,7 +545,7 @@
         <button onclick="connectToDesktop()" class="bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-black text-xl transition-colors shadow-[0_4px_0_rgb(37,99,235)] active:shadow-none active:translate-y-1">Start 🚀</button>
     </div>
 
-    <!-- Gameplay Controls (Hidden initially) -->
+    <!-- Gameplay Controls -->
     <div id="gameplay-controls" class="hidden flex-1 flex-col gap-4 max-w-sm mx-auto w-full">
         <!-- Host Player Count -->
         <div id="host-stats" class="hidden bg-slate-800 p-3 rounded-2xl border border-slate-700 text-center shrink-0">
@@ -531,21 +553,82 @@
             <p id="host-player-count" class="text-2xl font-black text-purple-400">1</p>
         </div>
 
-        <!-- A, B, C, D Buttons (For both Host and Player) -->
+        <!-- A, B, C, D Buttons -->
         <div class="grid grid-cols-2 gap-3 flex-1 max-h-[300px]">
-            <button onclick="sendPlayerAnswer('a')" class="bg-red-500 rounded-2xl text-4xl font-black active:bg-red-700 transition-colors shadow-[0_5px_0_rgb(185,28,28)] active:shadow-none active:translate-y-[5px]">A</button>
-            <button onclick="sendPlayerAnswer('b')" class="bg-blue-500 rounded-2xl text-4xl font-black active:bg-blue-700 transition-colors shadow-[0_5px_0_rgb(29,78,216)] active:shadow-none active:translate-y-[5px]">B</button>
-            <button onclick="sendPlayerAnswer('c')" class="bg-yellow-500 rounded-2xl text-4xl font-black active:bg-yellow-700 transition-colors shadow-[0_5px_0_rgb(161,98,7)] active:shadow-none active:translate-y-[5px]">C</button>
-            <button onclick="sendPlayerAnswer('d')" class="bg-green-500 rounded-2xl text-4xl font-black active:bg-green-700 transition-colors shadow-[0_5px_0_rgb(21,128,61)] active:shadow-none active:translate-y-[5px]">D</button>
+            <button id="btn-a" onclick="sendPlayerAnswer('a')" class="bg-red-500 rounded-2xl text-4xl font-black transition-all shadow-[0_5px_0_rgb(185,28,28)]">A</button>
+            <button id="btn-b" onclick="sendPlayerAnswer('b')" class="bg-blue-500 rounded-2xl text-4xl font-black transition-all shadow-[0_5px_0_rgb(29,78,216)]">B</button>
+            <button id="btn-c" onclick="sendPlayerAnswer('c')" class="bg-yellow-500 rounded-2xl text-4xl font-black transition-all shadow-[0_5px_0_rgb(161,98,7)]">C</button>
+            <button id="btn-d" onclick="sendPlayerAnswer('d')" class="bg-green-500 rounded-2xl text-4xl font-black transition-all shadow-[0_5px_0_rgb(21,128,61)]">D</button>
         </div>
 
-        <!-- Host Extra Controls -->
+        <!-- Host Extra Controls (Main Screen) -->
         <div id="host-extra-controls" class="hidden flex-col gap-3 shrink-0">
             <div class="grid grid-cols-2 gap-3 h-16">
                 <button onclick="sendRemoteCommand('BACK')" class="bg-slate-700 rounded-2xl text-lg font-bold active:bg-slate-500 transition-colors">Back</button>
                 <button onclick="sendRemoteCommand('NEXT')" class="bg-purple-600 rounded-2xl text-lg font-bold active:bg-purple-800 transition-colors shadow-[0_4px_0_rgb(107,33,168)] active:shadow-none active:translate-y-1">Next</button>
             </div>
+            <!-- Advanced Menu Button -->
+            <button onclick="openHostAdvancedMenu()" class="bg-slate-800 border-2 border-slate-600 text-slate-300 rounded-2xl py-3 text-sm font-bold active:bg-slate-700 transition-colors mt-2 flex justify-center items-center gap-2">⚙️ Advanced Controls</button>
         </div>
+    </div>
+
+    <!-- NAYA: Host Advanced Controls Modal (Hidden by default) -->
+    <div id="host-advanced-modal" class="hidden fixed inset-0 bg-slate-950 z-[110] flex-col p-6 text-white h-[100dvh] overflow-y-auto fade-in">
+        <div class="flex justify-between items-center mb-6 shrink-0 mt-2">
+            <h3 class="text-2xl font-black text-purple-400 flex items-center gap-2">⚙️ Admin Panel</h3>
+            <button onclick="closeHostAdvancedMenu()" class="text-slate-400 hover:text-white text-4xl font-bold">&times;</button>
+        </div>
+        
+        <div class="space-y-6">
+            <!-- Game State Controls -->
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="sendRemoteCommand('PAUSE')" class="bg-amber-600 py-4 rounded-xl font-bold shadow-md active:scale-95 transition-transform">⏸ Pause Game</button>
+                <button onclick="sendRemoteCommand('RESUME')" class="bg-green-600 py-4 rounded-xl font-bold shadow-md active:scale-95 transition-transform">▶️ Resume</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="sendRemoteCommand('SHOW_QR')" class="bg-blue-600 py-4 rounded-xl font-bold shadow-md active:scale-95 transition-transform">👥 Show QR Code</button>
+                <button onclick="confirmEndGame()" class="bg-red-600 py-4 rounded-xl font-bold shadow-md active:scale-95 transition-transform">🏆 Show Results</button>
+            </div>
+
+            <!-- Live Participants List -->
+            <div class="bg-slate-800 rounded-3xl p-5 border border-slate-700">
+                <h4 class="font-bold text-slate-300 mb-4 text-xs uppercase tracking-widest flex justify-between items-center">
+                    Live Participants <span id="admin-list-count" class="bg-purple-600 text-white px-2 py-0.5 rounded-full text-[10px]">0</span>
+                </h4>
+                <div id="admin-participants-list" class="flex flex-col gap-3 max-h-60 overflow-y-auto custom-scroll pr-2">
+                    <p class="text-xs text-slate-500 italic">No participants yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAYA: Mobile Post-Game Scorecard (Hidden initially) -->
+    <div id="mobile-result-card" class="hidden flex-1 flex-col justify-center items-center gap-4 max-w-sm mx-auto w-full fade-in">
+        <div class="text-6xl mb-2">🏅</div>
+        <h3 class="text-2xl font-black text-white mb-4">Quiz Finished!</h3>
+        
+        <div class="bg-slate-800 w-full p-6 rounded-3xl border border-slate-700 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <span class="text-slate-400 font-bold uppercase tracking-widest text-xs">Your Score</span>
+                <span id="mobile-final-score" class="text-2xl font-black text-blue-400">0</span>
+            </div>
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <span class="text-slate-400 font-bold uppercase tracking-widest text-xs">Highest Streak</span>
+                <span id="mobile-final-streak" class="text-xl font-bold text-orange-400">🔥 0</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-bold uppercase tracking-widest text-xs">Look at Main Screen</span>
+                <span class="text-xl font-black text-white">👀</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAYA: Kicked Screen (Hidden initially) -->
+    <div id="kicked-screen" class="hidden flex-1 flex-col justify-center items-center gap-4 max-w-sm mx-auto w-full fade-in">
+        <div class="text-6xl mb-2">🚫</div>
+        <h3 class="text-2xl font-black text-red-500 mb-2 text-center">Admin Removed You</h3>
+        <p class="text-slate-400 text-center text-sm">You can no longer participate in this quiz.</p>
     </div>
 </div>
 
@@ -855,6 +938,11 @@
                 container.appendChild(btn);
             });
             updateProgress();
+            
+            // NAYA: Mobiles ko signal bhejna ki agla question aa gaya hai, buttons reset karlo
+            if (typeof broadcastToMobiles === 'function') {
+                broadcastToMobiles({ type: 'reset_ui' });
+            }
         }
 
         function startTimer() {
@@ -894,13 +982,64 @@
         function nextOrFinish() {
             clearInterval(timerInterval);
             timerInterval = null;
+            
             if (currentIndex < questions.length - 1) {
                 currentIndex++;
                 saveSession(); 
-                showQuestion();
+                
+                // NAYA: Mid-Game Leaderboard (Har 5 questions ke baad)
+                if (Object.keys(multiPlayers).length > 0 && currentIndex % 5 === 0) {
+                    showMidGameStandings();
+                } else {
+                    showQuestion();
+                }
             } else {
                 showResults();
             }
+        }
+
+        // NAYA: Mid-Game Standings Flash Screen Logic
+        function showMidGameStandings() {
+            const container = document.getElementById('mid-game-standings');
+            const list = document.getElementById('mid-game-list');
+            if(!container || !list) { showQuestion(); return; }
+
+            list.innerHTML = '';
+            
+            // Score ke hisaab se sort karo
+            const playersArray = Object.keys(multiPlayers).map(name => ({ name, score: multiPlayers[name].score }));
+            playersArray.sort((a, b) => b.score - a.score);
+
+            // Sirf Top 3 dikhao, Points hide rakho
+            playersArray.slice(0, 3).forEach((p, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+                const bg = i === 0 ? 'bg-purple-900/40 border-purple-500' : 'bg-slate-700/50 border-slate-600';
+                
+                list.innerHTML += `
+                    <div class="${bg} border p-4 rounded-2xl flex justify-between items-center text-white font-bold text-xl transform transition-all hover:scale-105">
+                        <div class="flex items-center gap-4">
+                            <span class="text-3xl">${medal}</span>
+                            <span>${p.name}</span>
+                        </div>
+                        <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400 uppercase tracking-widest">Top Rank</span>
+                    </div>`;
+            });
+
+            container.classList.remove('hidden');
+            
+            // 5 Second ka Timer
+            let timeLeft = 5;
+            document.getElementById('mid-game-timer').innerText = timeLeft;
+            
+            const countInt = setInterval(() => {
+                timeLeft--;
+                document.getElementById('mid-game-timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(countInt);
+                    container.classList.add('hidden');
+                    showQuestion(); // 5 second baad agla sawaal dikhao
+                }
+            }, 1000);
         }
 
         function prevQuestion() {
@@ -1492,11 +1631,12 @@ ${optionsText}`;
 
         let playerName = ""; 
         
-        // Multiplayer Tracking State
-        let multiPlayers = {}; // Sabke scores yahan save honge
+        // NAYA: Smart Tracking State (Overwrite Mode ke liye)
+        let multiPlayers = {}; 
         let totalConnected = 0;
-        let answersThisTurn = 0;
-        let answeredPlayersThisTurn = new Set(); 
+        let currentAnswers = {}; 
+        let autoShiftTimeout = null;
+        let clientConnections = []; // NAYA: Sabhi connected mobiles ki list yahan save hogi
 
         // 1. Settings Toggle Logic
         function handleRemoteSettingChange() {
@@ -1517,7 +1657,8 @@ ${optionsText}`;
         function openRemoteQR(role) {
             document.getElementById('qr-modal').classList.remove('hidden');
             if(peer && peer.id) {
-                const magicUrl = `${window.location.origin}${window.location.pathname}?mode=remote&peerId=${peer.id}&role=${role}`;
+                const baseUrl = window.location.href.split('?')[0]; 
+                const magicUrl = `${baseUrl}?mode=remote&peerId=${peer.id}&role=${role}`;
                 const qrContainer = document.getElementById('qrcode-container');
                 qrContainer.innerHTML = ''; 
                 new QRCode(qrContainer, {
@@ -1530,101 +1671,244 @@ ${optionsText}`;
         }
         function closeRemoteQR() { document.getElementById('qr-modal').classList.add('hidden'); }
 
-        // 3. Main Desktop Initialization (The Server)
+       // 3. Main Desktop Initialization (The Server)
         function initPeer() {
             peer = new Peer(); 
             peer.on('connection', function(conn) {
+                clientConnections.push(conn); 
+                
                 conn.on('data', function(data) {
                     if (data.type === 'join') {
-                        // Agar player pehle se juda tha (page refresh kiya), toh double count na ho
                         if (!multiPlayers[data.name]) {
                             totalConnected++;
+                            updateHUDOnJoin(data.name); 
                         }
-                        multiPlayers[data.name] = { score: multiPlayers[data.name]?.score || 0 };
+                        multiPlayers[data.name] = { 
+                            score: multiPlayers[data.name]?.score || 0,
+                            streak: multiPlayers[data.name]?.streak || 0,
+                            maxStreak: multiPlayers[data.name]?.maxStreak || 0 
+                        };
                         showToast("👤 " + data.name + " Joined!");
                         
-                        // Sirf Host UI mein count dikhane ke liye
-                        const countEl = document.getElementById('host-player-count');
-                        if(countEl) countEl.innerText = totalConnected;
+                        // NAYA: Ab sirf count nahi, poori list sabko bhejenge
+                        broadcastToMobiles({ 
+                            type: 'update_player_list', 
+                            list: Object.keys(multiPlayers), 
+                            count: totalConnected 
+                        });
                     } 
                     else if (data.type === 'answer') {
                         handleMultiplayerAnswer(data.name, data.option);
                     } 
                     else if (data.type === 'cmd') {
-                        handleRemoteCommand(data.cmd);
+                        // NAYA: Jab admin Advanced Menu khole toh list mange
+                        if (data.cmd === 'REQUEST_LIST') {
+                            broadcastToMobiles({ 
+                                type: 'update_player_list', 
+                                list: Object.keys(multiPlayers), 
+                                count: totalConnected 
+                            });
+                        } else {
+                            handleRemoteCommand(data.cmd);
+                        }
                     }
                 });
             });
         }
 
-        // Multiplayer Answer Tracking Logic
+        function broadcastToMobiles(payload) {
+            clientConnections.forEach(conn => {
+                if(conn && conn.open) conn.send(payload);
+            });
+        }
+
+        // HUD Functions
+        function updateHUDOnJoin(name) {
+            const hud = document.getElementById('player-hud');
+            if(!hud) return;
+            const badge = document.createElement('div');
+            badge.id = 'badge-' + name;
+            badge.className = 'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors border border-slate-300 dark:border-slate-700';
+            badge.innerText = name;
+            hud.appendChild(badge);
+        }
+
+        function resetHUD() {
+             const hud = document.getElementById('player-hud');
+             if(hud) {
+                 Array.from(hud.children).forEach(badge => {
+                     badge.classList.remove('bg-green-500', 'text-white', 'border-green-600', 'dark:bg-green-600', 'dark:border-green-500');
+                     badge.classList.add('bg-slate-200', 'text-slate-500', 'border-slate-300', 'dark:bg-slate-800', 'dark:text-slate-400', 'dark:border-slate-700');
+                 });
+             }
+        }
+
+      // Smart Answer Tracking & Overwrite Logic
         function handleMultiplayerAnswer(name, option) {
             if(document.getElementById('quiz-view').classList.contains('hidden')) return;
             
-            // Ek player ek question par do baar click na kar sake
-            if(answeredPlayersThisTurn.has(name)) return;
-            answeredPlayersThisTurn.add(name);
-
-            showToast("✅ " + name + " answered!");
-
-            // Check correct answer and add score (Case-insensitive matching)
-            const q = questions[currentIndex];
-            if (option.toLowerCase() === q.correctAnswer.toLowerCase()) {
-                multiPlayers[name].score += 1;
+            // NAYA: Agar 3-sec timer start ho chuka hai, toh answers LOCK kar do (No changes allowed)
+            if (autoShiftTimeout !== null) {
+                return; 
+            }
+            
+            let playerBadge = document.getElementById('badge-' + name);
+            if(playerBadge) {
+                playerBadge.classList.remove('bg-slate-200', 'text-slate-500', 'border-slate-300', 'dark:bg-slate-800', 'dark:text-slate-400', 'dark:border-slate-700');
+                playerBadge.classList.add('bg-green-500', 'text-white', 'border-green-600', 'dark:bg-green-600', 'dark:border-green-500');
             }
 
-            answersThisTurn++;
+            currentAnswers[name] = option;
+            const answeredCount = Object.keys(currentAnswers).length;
 
-            // Smart Auto-Shift: Agar sabne answer de diya
-            if (answersThisTurn >= totalConnected && totalConnected > 0) {
+            if (answeredCount >= totalConnected && totalConnected > 0) {
                 showToast("⏳ Everyone answered! Next in 3 sec...");
                 
-                // Desktop par correct answer highlight karna
+                const q = questions[currentIndex];
                 const btns = document.querySelectorAll('#options-container button');
+                
                 q.options.forEach((opt, index) => {
                     if(opt.label.toLowerCase() === q.correctAnswer.toLowerCase() && btns[index]) {
                         btns[index].classList.add('correct');
                     }
                 });
 
-                // Values reset karo agle question ke liye
-                answersThisTurn = 0;
-                answeredPlayersThisTurn.clear();
-                
-                // 3 second baad automatic next
-                setTimeout(() => {
+                Object.keys(multiPlayers).forEach(playerName => {
+                    const playerAnswer = currentAnswers[playerName];
+                    
+                    if (playerAnswer && playerAnswer.toLowerCase() === q.correctAnswer.toLowerCase()) {
+                        multiPlayers[playerName].score += 1;
+                        multiPlayers[playerName].streak += 1;
+                        if(multiPlayers[playerName].streak > multiPlayers[playerName].maxStreak) {
+                            multiPlayers[playerName].maxStreak = multiPlayers[playerName].streak;
+                        }
+                    } else {
+                        multiPlayers[playerName].streak = 0;
+                    }
+                });
+
+                if (typeof broadcastToMobiles === 'function') {
+                    broadcastToMobiles({ type: 'turn_result', playersData: multiPlayers });
+                }
+
+                // Timer shuru karo
+                autoShiftTimeout = setTimeout(() => {
+                    currentAnswers = {};
+                    resetHUD();
+                    autoShiftTimeout = null; // NAYA: Agle sawaal ke liye lock wapas hata do
                     nextOrFinish();
                 }, 3000);
             }
         }
 
-        // Host Manual Commands
+        // Host Manual Commands (UPDATED for Advanced Logic)
         function handleRemoteCommand(command) {
             if(document.getElementById('quiz-view').classList.contains('hidden')) return;
-            // Agar host manually NEXT dabaye toh aage badh jao
-            if(command === 'NEXT') {
-                answersThisTurn = 0;
-                answeredPlayersThisTurn.clear();
-                nextOrFinish();
-            }
-            if(command === 'BACK') {
-                answersThisTurn = 0;
-                answeredPlayersThisTurn.clear();
-                prevQuestion();
-            }
             
+            if(command === 'NEXT' || command === 'BACK') {
+                clearTimeout(autoShiftTimeout); 
+                autoShiftTimeout = null; 
+                currentAnswers = {};
+                resetHUD();
+                if(command === 'NEXT') nextOrFinish();
+                if(command === 'BACK') prevQuestion();
+            }
             if(command === 'SHOW_LEADERBOARD') {
                 showResults();
+            }
+            if(command === 'PAUSE') {
+                clearTimeout(autoShiftTimeout);
+                clearInterval(timerInterval); // Timer rok do
+                showToast("⏸ Game Paused by Admin");
+                document.getElementById('question-card').classList.add('opacity-50', 'pointer-events-none');
+            }
+            if(command === 'RESUME') {
+                document.getElementById('question-card').classList.remove('opacity-50', 'pointer-events-none');
+                showToast("▶️ Game Resumed");
+                if (maxTimePerQuestion > 0 && timeLeft > 0) {
+                    timerInterval = setInterval(() => {
+                        timeLeft--;
+                        updateTimerDisplay();
+                        if (timeLeft <= 5) document.getElementById('timer-text').classList.add('timer-low');
+                        else document.getElementById('timer-text').classList.remove('timer-low');
+                        if (timeLeft <= 0) {
+                            clearInterval(timerInterval);
+                            timerInterval = null;
+                            if (!userResponses[currentIndex]) userResponses[currentIndex] = 'TIMED_OUT';
+                            showQuestion();
+                        }
+                    }, 1000);
+                }
+            }
+            if(command === 'SHOW_QR') {
+                openRemoteQR('player');
+            }
+            if(command.startsWith('KICK:')) {
+                const targetName = command.split(':')[1];
+                if(multiPlayers[targetName]) {
+                    // NAYA: Us specific player ko signal bhejo ki wo nikal diya gaya hai
+                    if (typeof broadcastToMobiles === 'function') {
+                        broadcastToMobiles({ type: 'kicked', target: targetName });
+                    }
+                    
+                    delete multiPlayers[targetName]; // Player ko system se nikal do
+                    totalConnected--;
+                    
+                    // HUD se uska badge hatao
+                    const badge = document.getElementById('badge-' + targetName);
+                    if(badge) badge.remove();
+                    
+                    showToast("👢 " + targetName + " removed by Admin");
+                    
+                    const countEl = document.getElementById('host-player-count');
+                    if(countEl) countEl.innerText = totalConnected;
+                    
+                    // Nayi list sabko bhejo
+                    broadcastToMobiles({ type: 'update_player_list', list: Object.keys(multiPlayers), count: totalConnected });
+                }
+            }
+        }
+
+        // --- NAYA: Mobile Advanced Menu JS Logic ---
+        function openHostAdvancedMenu() {
+            document.getElementById('host-advanced-modal').classList.remove('hidden');
+            document.getElementById('host-advanced-modal').classList.add('flex');
+            // Menu khulte hi list update karne ki request
+            if(remoteConnection && remoteConnection.open) {
+                remoteConnection.send({ type: 'cmd', cmd: 'REQUEST_LIST', name: playerName });
+            }
+        }
+
+        function closeHostAdvancedMenu() {
+            document.getElementById('host-advanced-modal').classList.add('hidden');
+            document.getElementById('host-advanced-modal').classList.remove('flex');
+        }
+
+        function confirmEndGame() {
+            if(confirm("⚠️ Are you sure you want to END the quiz and show results?")) {
+                sendRemoteCommand('SHOW_LEADERBOARD');
+                closeHostAdvancedMenu();
+            }
+        }
+
+        function confirmKickPlayer(targetName) {
+            if(confirm(`⚠️ Remove ${targetName} from the quiz?\n\nThey will not be able to answer anymore.`)) {
+                sendRemoteCommand('KICK:' + targetName);
             }
         }
 
         // 4. Mobile Remote Logic
+       // 4. Mobile Remote Logic (With Auto-Reconnect Save)
         function connectToDesktop() {
             playerName = document.getElementById('player-name-input').value.trim();
             if(!playerName) return alert("Please enter your name first!");
 
             const targetId = document.getElementById('connect-id-input').value.trim();
             if(!targetId) return alert("Desktop ID missing!");
+
+            // NAYA: Player ka naam aur Host ID local memory mein save kar lo
+            sessionStorage.setItem('ramish_quiz_name', playerName);
+            sessionStorage.setItem('ramish_quiz_host', targetId);
 
             document.getElementById('remote-status').innerText = "Connecting...";
             remoteConnection = peer.connect(targetId);
@@ -1646,6 +1930,97 @@ ${optionsText}`;
                     document.getElementById('remote-title').innerText = "Admin Panel";
                     document.getElementById('remote-title').classList.replace('text-blue-400', 'text-purple-400');
                 }
+
+                // Mobile par Laptop se aane wale signals ko sunna
+                remoteConnection.on('data', function(data) {
+                    // NAYA: Kicked Signal Receive karna
+                    if (data.type === 'kicked') {
+                        // Check karo ki kya yeh signal isi player ke liye hai
+                        if (playerName === data.target) {
+                            // Local storage saaf kar do taaki page refresh karne par wapas connect na ho
+                            sessionStorage.removeItem('ramish_quiz_name');
+                            sessionStorage.removeItem('ramish_quiz_host');
+                            
+                            // Saare controls chupa do aur Kicked screen dikhao
+                            document.getElementById('gameplay-controls').classList.add('hidden');
+                            document.getElementById('gameplay-controls').classList.remove('flex');
+                            document.getElementById('mobile-result-card').classList.add('hidden');
+                            
+                            const badge = document.getElementById('streak-badge');
+                            if(badge) badge.classList.add('hidden');
+                            
+                            const kickedScreen = document.getElementById('kicked-screen');
+                            if(kickedScreen) {
+                                kickedScreen.classList.remove('hidden');
+                                kickedScreen.classList.add('flex');
+                            }
+                            
+                            // Connection puri tarah se kaat do
+                            if(remoteConnection) remoteConnection.close();
+                        }
+                    }
+                    
+                    // NAYA: Live Participant List Mobile par Update Karna (Purane update_count ki jagah)
+                    if (data.type === 'update_player_list') {
+                        const adminCount = document.getElementById('admin-list-count');
+                        const mainCount = document.getElementById('host-player-count');
+                        if (adminCount) adminCount.innerText = data.count;
+                        if (mainCount) mainCount.innerText = data.count;
+
+                        const listContainer = document.getElementById('admin-participants-list');
+                        if (listContainer) {
+                            listContainer.innerHTML = '';
+                            if(data.list.length === 0) {
+                                listContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No participants yet.</p>';
+                            } else {
+                                data.list.forEach(pName => {
+                                    listContainer.innerHTML += `
+                                        <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700 mb-2">
+                                            <span class="font-bold text-slate-300 text-sm">👤 ${pName}</span>
+                                            <button onclick="confirmKickPlayer('${pName}')" class="text-xs bg-red-900/50 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg transition-colors font-bold border border-red-800">Remove</button>
+                                        </div>
+                                    `;
+                                });
+                            }
+                        }
+                    }
+
+                    if (data.type === 'reset_ui') {
+                        ['a','b','c','d'].forEach(opt => {
+                            const btn = document.getElementById('btn-' + opt);
+                            if(btn) {
+                                btn.classList.remove('translate-y-[5px]', 'shadow-none', 'ring-4', 'ring-white', 'opacity-40', 'scale-95');
+                            }
+                        });
+                    }
+
+                    if (data.type === 'turn_result') {
+                        const myData = data.playersData[playerName];
+                        const badge = document.getElementById('streak-badge');
+                        if (myData && myData.streak >= 3) {
+                            document.getElementById('streak-count').innerText = myData.streak;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+
+                    if (data.type === 'game_over') {
+                        const myData = data.playersData[playerName];
+                        
+                        // FIX: 'flex' ko hatana zaroori hai warna 'hidden' kaam nahi karega
+                        document.getElementById('gameplay-controls').classList.remove('flex');
+                        document.getElementById('gameplay-controls').classList.add('hidden');
+                        
+                        document.getElementById('mobile-result-card').classList.remove('hidden');
+                        document.getElementById('mobile-result-card').classList.add('flex');
+                        
+                        if(myData) {
+                            document.getElementById('mobile-final-score').innerText = myData.score;
+                            document.getElementById('mobile-final-streak').innerText = '🔥 ' + myData.maxStreak;
+                        }
+                    }
+                });
             });
 
             remoteConnection.on('error', function(err) {
@@ -1653,22 +2028,24 @@ ${optionsText}`;
             });
         }
 
-        // Mobile se Option A,B,C,D bhejne ka function
+        // NAYA: Mobile Button 3D Effect Function
         function sendPlayerAnswer(option) {
             if(remoteConnection && remoteConnection.open) {
                 remoteConnection.send({ type: 'answer', option: option, name: playerName });
                 if (navigator.vibrate) navigator.vibrate(50);
                 
-                // Mobile screen par chhota sa feedback
-                const titleEl = document.getElementById('remote-title');
-                const oldTitle = titleEl.innerText;
-                titleEl.innerText = "Sent! 🚀";
-                titleEl.classList.add('text-green-400');
-                
-                setTimeout(() => {
-                    titleEl.innerText = oldTitle;
-                    titleEl.classList.remove('text-green-400');
-                }, 1500);
+                // 3D Press Effect lagao (Jo dabaya wo dhas jayega, baaki light ho jayenge)
+                ['a','b','c','d'].forEach(opt => {
+                    const btn = document.getElementById('btn-' + opt);
+                    if(!btn) return;
+                    if(opt === option) {
+                        btn.classList.add('translate-y-[5px]', 'shadow-none', 'ring-4', 'ring-white');
+                        btn.classList.remove('opacity-40', 'scale-95');
+                    } else {
+                        btn.classList.remove('translate-y-[5px]', 'shadow-none', 'ring-4', 'ring-white');
+                        btn.classList.add('opacity-40', 'scale-95');
+                    }
+                });
             }
         }
 
@@ -1679,7 +2056,7 @@ ${optionsText}`;
             }
         }
 
-        // 5. On Load Setup
+        // 5. On Load Setup (With Auto-Reconnect)
         window.onload = function() {
             updateFolderSelectDropdown();
             loadSettingsFromStorage(); 
@@ -1690,7 +2067,21 @@ ${optionsText}`;
                 document.getElementById('remote-view').classList.remove('hidden');
                 
                 peer = new Peer(); 
-                if(autoConnectId) {
+                
+                // Auto-Reconnect Logic
+                const savedName = sessionStorage.getItem('ramish_quiz_name');
+                const savedHost = sessionStorage.getItem('ramish_quiz_host');
+
+                if (savedName && savedHost) {
+                    document.getElementById('player-name-input').value = savedName;
+                    document.getElementById('connect-id-input').value = savedHost;
+                    
+                    // Thoda time dekar auto-connect trigger karna
+                    setTimeout(() => {
+                        connectToDesktop();
+                    }, 1000);
+                } 
+                else if(autoConnectId) {
                     document.getElementById('connect-id-input').value = autoConnectId;
                 } else {
                     document.getElementById('connect-id-input').classList.remove('hidden');
@@ -1707,11 +2098,16 @@ ${optionsText}`;
             }
         };
 
-        // 6. Multiplayer Leaderboard Function (STEP 2 YAHAN HAI)
+       // 6. Multiplayer Leaderboard Function 
         function showLeaderboard() {
             const lbContainer = document.getElementById('multiplayer-leaderboard-container');
             const lbList = document.getElementById('leaderboard-list');
             
+            // NAYA: Laptop sabhi mobiles ko 'game_over' ka signal bhejega
+            if (typeof broadcastToMobiles === 'function') {
+                broadcastToMobiles({ type: 'game_over', playersData: multiPlayers });
+            }
+
             if(!lbContainer || !lbList) return;
             
             lbContainer.classList.remove('hidden');
@@ -1751,9 +2147,6 @@ ${optionsText}`;
             const normalStats = document.querySelector('#result-view .grid.sm\\:grid-cols-4');
             if(normalStats) normalStats.classList.add('hidden');
         }
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
