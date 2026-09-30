@@ -283,8 +283,17 @@
                             <!-- Folders appended here dynamically -->
                         </select>
                     </div>
+
                     <div class="flex items-end">
                         <button onclick="openSettings()" class="w-full sm:w-auto bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">⚙️ Settings</button>
+                    </div>
+                </div>
+
+                <!-- NAYA FIXED: Setup Screen par Multiplayer QR Buttons (Ab yeh naye row mein aayenge aur chipkenge nahi) -->
+                <div class="mb-4 shrink-0">
+                    <div id="setup-multiplayer-qr-btns" class="hidden items-center gap-3 flex-wrap">
+                        <button onclick="openRemoteQR('player')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-3 rounded-xl font-bold border border-blue-200 transition-colors flex items-center gap-2 shadow-sm flex-1 sm:flex-none justify-center">👥 Join QR</button>
+                        <button onclick="openRemoteQR('host')" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-4 py-3 rounded-xl font-bold border border-purple-200 transition-colors flex items-center gap-2 shadow-sm flex-1 sm:flex-none justify-center">👑 Admin QR</button>
                     </div>
                 </div>
                 
@@ -292,7 +301,7 @@
                     <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Paste Questions:</label>
                     <textarea id="combined-input" class="w-full flex-1 p-4 border dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none font-mono text-sm text-slate-900 dark:text-white custom-scroll resize-none" placeholder="1. <Q> Question text here? </Q>&#10;<A>&#10;*(a) Correct Answer&#10;(b) Wrong Option...&#10;</A>"></textarea>
                 </div>
-                <button onclick="saveAndStart()" class="w-full shrink-0 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 text-xl tracking-wide">🚀 Bismillah</button>
+                <button onclick="saveAndStart()" class="w-full shrink-0 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 text-xl tracking-wide z-10 relative">🚀 Bismillah</button>
             </div>
 
             <!-- Settings Modal -->
@@ -531,6 +540,10 @@
         <h2 id="remote-title" class="text-3xl font-black text-blue-400 mb-1">RAMISH Quiz</h2>
         <p id="remote-status" class="text-sm text-slate-400">Not Connected</p>
         
+        <!-- NAYA: Question Progress Tracker (Hidden initially) -->
+        <div id="remote-q-progress" class="hidden mt-2 inline-block bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-full border border-slate-700 shadow-sm transition-all duration-300"></div>
+        
+        
         <!-- NAYA: Streak Badge (Hidden initially) -->
         <div id="streak-badge" class="hidden absolute top-0 right-0 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-black shadow-[0_0_15px_rgba(249,115,22,0.6)] animate-bounce border-2 border-orange-300">
             🔥 <span id="streak-count">3</span>x STREAK
@@ -601,7 +614,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    
 
     <!-- NAYA: Mobile Post-Game Scorecard (Hidden initially) -->
     <div id="mobile-result-card" class="hidden flex-1 flex-col justify-center items-center gap-4 max-w-sm mx-auto w-full fade-in">
@@ -631,6 +644,13 @@
         <p class="text-slate-400 text-center text-sm">You can no longer participate in this quiz.</p>
     </div>
 </div>
+
+<!-- NAYA: Waiting Screen (Lobby) -->
+    <div id="waiting-screen" class="hidden flex-1 flex-col justify-center items-center gap-4 max-w-sm mx-auto w-full fade-in">
+        <div class="text-6xl mb-4 animate-bounce">⏳</div>
+        <h3 class="text-2xl font-black text-blue-400 mb-2 text-center">Connected!</h3>
+        <p class="text-slate-400 text-center text-sm">Wait for the Host to start the quiz...</p>
+    </div>
 
     <script>
         // --- State Variables ---
@@ -880,6 +900,11 @@
             showView('quiz-view');
             showQuestion();
             saveSession();
+
+            // NAYA: Jaise hi "Bismillah" dabe, sab mobiles ko Game Start ka signal bhejo
+            if (typeof broadcastToMobiles === 'function') {
+                broadcastToMobiles({ type: 'quiz_started' });
+            }
         }
 
         function calculateScore() {
@@ -939,9 +964,13 @@
             });
             updateProgress();
             
-            // NAYA: Mobiles ko signal bhejna ki agla question aa gaya hai, buttons reset karlo
+            // NAYA: Mobiles ko signal bhejna ki agla question aa gaya hai, buttons reset karlo aur Q Number bhejo
             if (typeof broadcastToMobiles === 'function') {
-                broadcastToMobiles({ type: 'reset_ui' });
+                broadcastToMobiles({ 
+                    type: 'reset_ui', 
+                    currentQ: currentIndex + 1, 
+                    totalQ: questions.length 
+                });
             }
         }
 
@@ -987,8 +1016,8 @@
                 currentIndex++;
                 saveSession(); 
                 
-                // NAYA: Mid-Game Leaderboard (Har 5 questions ke baad)
-                if (Object.keys(multiPlayers).length > 0 && currentIndex % 5 === 0) {
+                // NAYA: Mid-Game Leaderboard ab sirf tabhi aayega jab 1 se zyada log connected honge
+                if (Object.keys(multiPlayers).length > 1 && currentIndex % 5 === 0) {
                     showMidGameStandings();
                 } else {
                     showQuestion();
@@ -1479,9 +1508,18 @@ ${optionsText}`;
         function startWrongQuestionsPractice() {
             const wrong = questions.filter((q, i) => userResponses[i] !== q.correctAnswer);
             isExamMode = false;
+            
+            // NAYA: Remote mode mein practice round shuru hone se pehle purana score aur streak 0 kar do
+            if(typeof multiPlayers !== 'undefined') {
+                Object.keys(multiPlayers).forEach(p => {
+                    multiPlayers[p].score = 0;
+                    multiPlayers[p].streak = 0;
+                    multiPlayers[p].maxStreak = 0;
+                });
+            }
+
             startQuiz(wrong, `${originalChapterName} (Mistakes)`);
         }
-
         function showReviewScreen() {
             const container = document.getElementById('review-container');
             container.innerHTML = '';
@@ -1514,7 +1552,23 @@ ${optionsText}`;
             clearSession(); 
             quizActive = false; 
             clearInterval(timerInterval); 
-            location.reload(); 
+            if(autoShiftTimeout) clearTimeout(autoShiftTimeout);
+
+            // NAYA: Connection zinda rakhne ke liye scores 0 kar do
+            if(typeof multiPlayers !== 'undefined') {
+                Object.keys(multiPlayers).forEach(p => {
+                    multiPlayers[p].score = 0;
+                    multiPlayers[p].streak = 0;
+                    multiPlayers[p].maxStreak = 0;
+                });
+            }
+
+            // NAYA: Mobiles ko 'Waiting Room' mein bhej do
+            if (typeof broadcastToMobiles === 'function') {
+                broadcastToMobiles({ type: 'waiting_room' });
+            }
+
+            showView('setup-view'); // FIX: location.reload() hata diya
         }
 
         function saveSession() {
@@ -1643,13 +1697,16 @@ ${optionsText}`;
             const isEnabled = document.getElementById('remote-toggle').checked;
             const desc = document.getElementById('remote-desc');
             const qrBtns = document.getElementById('multiplayer-qr-btns');
+            const setupQrBtns = document.getElementById('setup-multiplayer-qr-btns'); // NAYA
             
             if (isEnabled) {
                 if(desc) desc.innerHTML = `<span class="text-blue-600 font-bold">Active:</span> Multiplayer ON.`;
                 if(qrBtns) { qrBtns.classList.remove('hidden'); qrBtns.classList.add('flex'); }
+                if(setupQrBtns) { setupQrBtns.classList.remove('hidden'); setupQrBtns.classList.add('flex'); }
             } else {
                 if(desc) desc.innerHTML = `<span class="text-slate-400">Inactive:</span> Remote off.`;
                 if(qrBtns) { qrBtns.classList.add('hidden'); qrBtns.classList.remove('flex'); }
+                if(setupQrBtns) { setupQrBtns.classList.add('hidden'); setupQrBtns.classList.remove('flex'); }
             }
         }
 
@@ -1690,18 +1747,19 @@ ${optionsText}`;
                         };
                         showToast("👤 " + data.name + " Joined!");
                         
-                        // NAYA: Ab sirf count nahi, poori list sabko bhejenge
                         broadcastToMobiles({ 
                             type: 'update_player_list', 
                             list: Object.keys(multiPlayers), 
                             count: totalConnected 
                         });
+
+                        // NAYA: Naye player ko batao ki wo Waiting mein jayega ya direct Game mein
+                        conn.send({ type: quizActive ? 'quiz_started' : 'waiting_room' });
                     } 
                     else if (data.type === 'answer') {
                         handleMultiplayerAnswer(data.name, data.option);
                     } 
                     else if (data.type === 'cmd') {
-                        // NAYA: Jab admin Advanced Menu khole toh list mange
                         if (data.cmd === 'REQUEST_LIST') {
                             broadcastToMobiles({ 
                                 type: 'update_player_list', 
@@ -1744,10 +1802,11 @@ ${optionsText}`;
         }
 
       // Smart Answer Tracking & Overwrite Logic
+        // Smart Answer Tracking & Overwrite Logic
         function handleMultiplayerAnswer(name, option) {
             if(document.getElementById('quiz-view').classList.contains('hidden')) return;
             
-            // NAYA: Agar 3-sec timer start ho chuka hai, toh answers LOCK kar do (No changes allowed)
+            // Agar 3-sec timer start ho chuka hai, toh answers LOCK kar do
             if (autoShiftTimeout !== null) {
                 return; 
             }
@@ -1767,9 +1826,25 @@ ${optionsText}`;
                 const q = questions[currentIndex];
                 const btns = document.querySelectorAll('#options-container button');
                 
+                // NAYA: Sirf ek player hone par uska galat answer detect karna aur memory mein save karna
+                let singlePlayerAnswer = null;
+                if (totalConnected === 1) {
+                    const playerNames = Object.keys(currentAnswers);
+                    if(playerNames.length > 0) {
+                        singlePlayerAnswer = currentAnswers[playerNames[0]];
+                        // NAYA: User responses mein save karo taaki Review aur Practice Mistakes kaam kare
+                        userResponses[currentIndex] = singlePlayerAnswer; 
+                    }
+                }
+                
                 q.options.forEach((opt, index) => {
+                    // Sahi answer ko hamesha green karo
                     if(opt.label.toLowerCase() === q.correctAnswer.toLowerCase() && btns[index]) {
                         btns[index].classList.add('correct');
+                    } 
+                    // Agar ek hi player hai aur uska answer galat hai, toh usko red karo
+                    else if (totalConnected === 1 && singlePlayerAnswer && opt.label.toLowerCase() === singlePlayerAnswer.toLowerCase() && btns[index]) {
+                        btns[index].classList.add('wrong');
                     }
                 });
 
@@ -1795,7 +1870,7 @@ ${optionsText}`;
                 autoShiftTimeout = setTimeout(() => {
                     currentAnswers = {};
                     resetHUD();
-                    autoShiftTimeout = null; // NAYA: Agle sawaal ke liye lock wapas hata do
+                    autoShiftTimeout = null; 
                     nextOrFinish();
                 }, 3000);
             }
@@ -1897,7 +1972,7 @@ ${optionsText}`;
             }
         }
 
-        // 4. Mobile Remote Logic
+    
        // 4. Mobile Remote Logic (With Auto-Reconnect Save)
         function connectToDesktop() {
             playerName = document.getElementById('player-name-input').value.trim();
@@ -1959,6 +2034,36 @@ ${optionsText}`;
                             if(remoteConnection) remoteConnection.close();
                         }
                     }
+
+                    // NAYA: Waiting Room Logic
+                    if (data.type === 'waiting_room') {
+                        document.getElementById('player-join-box').classList.add('hidden');
+                        document.getElementById('gameplay-controls').classList.add('hidden');
+                        document.getElementById('gameplay-controls').classList.remove('flex');
+                        document.getElementById('mobile-result-card').classList.add('hidden');
+                        document.getElementById('mobile-result-card').classList.remove('flex');
+
+                        const waitingScreen = document.getElementById('waiting-screen');
+                        if(waitingScreen) {
+                            waitingScreen.classList.remove('hidden');
+                            waitingScreen.classList.add('flex');
+                        }
+                    }
+
+                    // NAYA: Game Started Logic
+                    if (data.type === 'quiz_started') {
+                        const waitingScreen = document.getElementById('waiting-screen');
+                        if(waitingScreen) {
+                            waitingScreen.classList.add('hidden');
+                            waitingScreen.classList.remove('flex');
+                        }
+                        document.getElementById('player-join-box').classList.add('hidden');
+                        document.getElementById('mobile-result-card').classList.add('hidden');
+                        document.getElementById('mobile-result-card').classList.remove('flex');
+
+                        document.getElementById('gameplay-controls').classList.remove('hidden');
+                        document.getElementById('gameplay-controls').classList.add('flex');
+                    }
                     
                     // NAYA: Live Participant List Mobile par Update Karna (Purane update_count ki jagah)
                     if (data.type === 'update_player_list') {
@@ -1986,6 +2091,14 @@ ${optionsText}`;
                     }
 
                     if (data.type === 'reset_ui') {
+                        // NAYA: Question Number Screen Par Dikhana
+                        const qProg = document.getElementById('remote-q-progress');
+                        if(qProg && data.currentQ && data.totalQ) {
+                            qProg.innerText = `Question ${data.currentQ} / ${data.totalQ}`;
+                            qProg.classList.remove('hidden');
+                        }
+
+                        // Buttons wapas normal kar do
                         ['a','b','c','d'].forEach(opt => {
                             const btn = document.getElementById('btn-' + opt);
                             if(btn) {
@@ -2008,7 +2121,13 @@ ${optionsText}`;
                     if (data.type === 'game_over') {
                         const myData = data.playersData[playerName];
                         
-                        // FIX: 'flex' ko hatana zaroori hai warna 'hidden' kaam nahi karega
+                        // NAYA: Advanced modal ko force-close karna zaroori hai
+                        const advancedModal = document.getElementById('host-advanced-modal');
+                        if(advancedModal) {
+                            advancedModal.classList.add('hidden');
+                            advancedModal.classList.remove('flex');
+                        }
+                        
                         document.getElementById('gameplay-controls').classList.remove('flex');
                         document.getElementById('gameplay-controls').classList.add('hidden');
                         
