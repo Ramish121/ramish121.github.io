@@ -1,0 +1,127 @@
+/* CSS Variables for Themes */
+        :root {
+            /* Default Blue */
+            --color-primary-50: 239 246 255;
+            --color-primary-100: 219 234 254;
+            --color-primary-200: 191 219 254;
+            --color-primary-300: 147 197 253;
+            --color-primary-400: 96 165 250;
+            --color-primary-500: 59 130 246;
+            --color-primary-600: 37 99 235;
+            --color-primary-700: 29 78 216;
+            --color-primary-800: 30 64 175;
+            --color-primary-900: 30 58 138;
+            --color-primary-950: 23 37 84;
+        }
+
+        /* Emerald Theme */
+        body.theme-emerald {
+            --color-primary-50: 236 253 245;
+            --color-primary-100: 209 250 229;
+            --color-primary-200: 167 243 208;
+            --color-primary-300: 110 231 183;
+            --color-primary-400: 52 211 153;
+            --color-primary-500: 16 185 129;
+            --color-primary-600: 5 150 105;
+            --color-primary-700: 4 120 87;
+            --color-primary-800: 6 95 70;
+            --color-primary-900: 6 78 59;
+            --color-primary-950: 2 44 34;
+        }
+
+        /* Violet Theme */
+        body.theme-violet {
+            --color-primary-50: 245 243 255;
+            --color-primary-100: 237 233 254;
+            --color-primary-200: 221 214 254;
+            --color-primary-300: 196 181 253;
+            --color-primary-400: 167 139 250;
+            --color-primary-500: 139 92 246;
+            --color-primary-600: 124 58 237;
+            --color-primary-700: 109 40 217;
+            --color-primary-800: 91 33 182;
+            --color-primary-900: 76 29 149;
+            --color-primary-950: 46 16 101;
+        }
+
+        /* Rose Theme */
+        body.theme-rose {
+            --color-primary-50: 255 241 242;
+            --color-primary-100: 255 228 230;
+            --color-primary-200: 254 205 211;
+            --color-primary-300: 253 164 175;
+            --color-primary-400: 251 113 133;
+            --color-primary-500: 244 63 94;
+            --color-primary-600: 225 29 72;
+            --color-primary-700: 190 18 60;
+            --color-primary-800: 159 18 57;
+            --color-primary-900: 136 19 55;
+            --color-primary-950: 76 5 25;
+        }
+
+        /* Amber Theme */
+        body.theme-amber {
+            --color-primary-50: 255 251 235;
+            --color-primary-100: 254 243 199;
+            --color-primary-200: 253 230 138;
+            --color-primary-300: 252 211 77;
+            --color-primary-400: 251 191 36;
+            --color-primary-500: 245 158 11;
+            --color-primary-600: 217 119 6;
+            --color-primary-700: 180 83 9;
+            --color-primary-800: 146 64 14;
+            --color-primary-900: 120 53 15;
+            --color-primary-950: 69 26 3;
+        }
+
+        /* Viewport Lock Styles to fix Mobile Address Bar issue */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; 
+            position: fixed; 
+            overscroll-behavior: none; 
+        }
+
+        .option-btn { transition: all 0.2s ease; }
+        .correct { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; }
+        .wrong { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
+        .selected-neutral { 
+            background-color: rgb(var(--color-primary-600)) !important; 
+            color: white !important; 
+            border-color: rgb(var(--color-primary-700)) !important; 
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; }
+
+        @keyframes pulse-red {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #ef4444; }
+        }
+        .timer-low { animation: pulse-red 0.5s infinite; color: #ef4444; font-weight: 800; }
+
+        .palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; }
+        .palette-btn { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid transparent; transition: all 0.2s; }
+        .palette-btn:hover { transform: scale(1.1); }
+        .p-current { border-color: rgb(var(--color-primary-500)); transform: scale(1.1); box-shadow: 0 4px 6px -1px rgba(var(--color-primary-500), 0.5); }
+        
+        .p-unanswered { background-color: #f1f5f9; color: #64748b; }
+        .dark .p-unanswered { background-color: #1e293b; color: #94a3b8; }
+        .p-answered-neutral { background-color: rgb(var(--color-primary-200)); color: rgb(var(--color-primary-900)); } 
+        .dark .p-answered-neutral { background-color: rgb(var(--color-primary-900)); color: rgb(var(--color-primary-200)); }
+        .p-correct { background-color: #bbf7d0; color: #166534; }
+        .dark .p-correct { background-color: #14532d; color: #bbf7d0; }
+        .p-wrong { background-color: #fecaca; color: #991b1b; }
+        .dark .p-wrong { background-color: #7f1d1d; color: #fecaca; }
+
+        /* Auto-styling for Tables inside Questions */
+        #question-text table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+        @media (min-width: 768px) { #question-text table { font-size: 1rem; } }
+        #question-text th, #question-text td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
+        .dark #question-text th, .dark #question-text td { border-color: #475569; }
+        #question-text th { background-color: #f1f5f9; font-weight: bold; }
+        .dark #question-text th { background-color: #1e293b; }
