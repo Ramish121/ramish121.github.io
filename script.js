@@ -80,8 +80,20 @@
                 mainContent.className = "w-full transition-all duration-300 flex flex-col h-full";
                 document.getElementById('app').classList.remove('md:p-8');
             }
+            
+            // NAYA: Aurora Background ko sirf Setup-View par dikhana
+            const auroraBg = document.querySelector('.aurora-wrapper');
+            if (auroraBg) {
+                if (viewId === 'setup-view') {
+                    auroraBg.style.display = 'block'; 
+                } else {
+                    auroraBg.style.display = 'none';  
+                }
+            }
+
             if(viewId !== 'quiz-view' && viewId !== 'review-view') window.scrollTo(0, 0);
         }
+        
 
         // ---------- FOLDER FUNCTIONS ---------- //
         function createNewFolder() {
@@ -997,7 +1009,17 @@ ${optionsText}`;
         }
 
         document.addEventListener('keydown', (e) => {
+            // NAYA: Global Full-screen Toggle ('F' key)
+            // Safety check: Agar aap kisi input ya textarea mein type kar rahe hain, toh yeh kaam nahi karega
+            if (e.key.toLowerCase() === 'f' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                toggleFullScreen();
+                return; 
+            }
+
+            // Neeche ka code sirf tab chalega jab quiz-view open ho
             if (document.getElementById('quiz-view').classList.contains('hidden')) return;
+            
             const k = e.key.toLowerCase();
             const btns = document.querySelectorAll('#options-container button');
             if(['1','a'].includes(k) && btns[0] && !btns[0].disabled) btns[0].click();
@@ -1013,7 +1035,7 @@ ${optionsText}`;
             if(k === 'backspace') prevQuestion();
         });
 
-        // Naya Feature: Right click se next question par jana
+        // Right click se next question par jana
         document.addEventListener('contextmenu', (e) => {
             if (!document.getElementById('quiz-view').classList.contains('hidden')) {
                 e.preventDefault(); // Default menu ko block karta hai

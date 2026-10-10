@@ -125,3 +125,60 @@
         .dark #question-text th, .dark #question-text td { border-color: #475569; }
         #question-text th { background-color: #f1f5f9; font-weight: bold; }
         .dark #question-text th { background-color: #1e293b; }
+
+       /* --- AMBIENT AURORA BACKGROUND --- */
+.aurora-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0; /* FIX: Isko -1 se 0 kar diya hai taaki background color ke upar aaye */
+  overflow: hidden;
+  pointer-events: none; /* Taaki clicks block na hon */
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px); 
+  opacity: 0.6; /* Halka rakha hai taaki text padhne mein dikkat na ho */
+  animation: float 20s infinite alternate ease-in-out;
+}
+
+.blob-1 {
+  width: 45vw;
+  height: 45vw;
+  background-color: #9dbca6; 
+  top: -10%;
+  left: -10%;
+  animation-duration: 22s;
+}
+
+.blob-2 {
+  width: 55vw;
+  height: 55vw;
+  background-color: #4a9f6d;
+  bottom: -20%;
+  right: -10%;
+  animation-duration: 28s;
+  animation-delay: -5s;
+}
+
+.blob-3 {
+  width: 40vw;
+  height: 40vw;
+  background-color: #1a5933;
+  top: 30%;
+  left: 30%;
+  animation-duration: 25s;
+  animation-delay: -10s;
+  mix-blend-mode: screen; 
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(5vw, 5vh) scale(1.1); }
+  66% { transform: translate(-5vw, 10vh) scale(0.9); }
+  100% { transform: translate(8vw, -5vh) scale(1.05); }
+}
