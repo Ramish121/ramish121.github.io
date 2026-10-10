@@ -40,7 +40,7 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
@@ -60,7 +60,8 @@
                     <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         📚 My Library
                     </h2>
-                    <button onclick="createNewFolder()" class="text-xs bg-primary-50 dark:bg-primary-900/30 hover:bg-primary-100 dark:hover:bg-primary-900/50 text-primary-700 dark:text-primary-300 font-bold px-3 py-1.5 rounded-lg border border-primary-200 dark:border-primary-800 transition-colors shadow-sm flex items-center gap-1">
+                    <!-- NAYA: Button ab popup nahi, inline input kholega -->
+                    <button onclick="showInlineFolderInput()" class="text-xs bg-primary-50 dark:bg-primary-900/30 hover:bg-primary-100 dark:hover:bg-primary-900/50 text-primary-700 dark:text-primary-300 font-bold px-3 py-1.5 rounded-lg border border-primary-200 dark:border-primary-800 transition-colors shadow-sm flex items-center gap-1">
                         <span>📁</span> New Folder
                     </button>
                 </div>
@@ -71,11 +72,22 @@
                 <!-- Dynamic Folder Name Display -->
                 <div id="current-folder-header" class="hidden mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
                     <div class="flex items-center gap-2 text-sm font-bold text-primary-600 dark:text-primary-400">
-                        <button onclick="goBackToRoot()" class="hover:underline flex items-center gap-1">← Back</button>
+                        <!-- NAYA: Back button ab root ke bajaye ek step upar le jayega -->
+                        <button onclick="goUpOneLevel()" class="hover:underline flex items-center gap-1">← Back</button>
                         <span class="text-slate-400">/</span>
                         <span id="current-folder-name" class="truncate max-w-[150px]">Folder Name</span>
                     </div>
                 </div>
+
+                <!-- NAYA: Inline Folder Input Dabba (Hidden by default) -->
+                <div id="inline-folder-input" class="hidden mb-3 p-3 bg-white dark:bg-slate-800 border border-primary-200 dark:border-primary-700 rounded-xl shadow-sm shrink-0 fade-in">
+                    <input type="text" id="new-folder-name" placeholder="Folder Name..." class="w-full mb-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 text-slate-900 dark:text-white">
+                    <div class="flex justify-end gap-2">
+                        <button onclick="cancelInlineFolder()" class="text-xs px-3 py-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">Cancel</button>
+                        <button onclick="saveInlineFolder()" class="text-xs px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold">Save</button>
+                    </div>
+                </div>
+
                 <!-- List -->
                 <div id="library-list" class="space-y-3 overflow-y-auto custom-scroll pr-2 flex-1 min-h-0"></div>
             </div>
@@ -289,18 +301,23 @@
                     <!-- Player badges JS se yahan aayenge -->
                 </div>
                 
-                <div id="question-card" class="flex-1 overflow-y-auto custom-scroll bg-white dark:bg-slate-900 shadow-lg rounded-2xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 min-h-0">
+                <!-- Yahan parent mein 'flex flex-col' add kiya gaya hai -->
+                <div id="question-card" class="flex-1 overflow-y-auto custom-scroll bg-white dark:bg-slate-900 shadow-lg rounded-2xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 min-h-0 flex flex-col">
                     
-                    <div class="flex justify-between items-start gap-3 mb-2">
-                        <h3 id="question-text" class="text-lg md:text-xl font-semibold leading-snug text-slate-800 dark:text-slate-100 whitespace-pre-line mt-1">Sawal...</h3>
-                        
-                        <button onclick="askAI()" class="shrink-0 bg-primary-100 hover:bg-primary-200 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 shadow-sm uppercase tracking-wide border border-primary-200 dark:border-primary-800" title="Explain with ChatGPT">
-                            <span class="text-sm">🤖</span>
-                            <span>Explain</span>
-                        </button>
-                    </div>
+                    <!-- NAYA WRAPPER: 'my-auto' jagah hone par center karega, kam jagah hone par top par bhej dega -->
+                    <div class="my-auto w-full">
+                        <div class="flex justify-between items-start gap-3 mb-2">
+                            <h3 id="question-text" class="text-lg md:text-xl font-semibold leading-snug text-slate-800 dark:text-slate-100 whitespace-pre-line mt-1">Sawal...</h3>
+                            
+                            <button onclick="askAI()" class="shrink-0 bg-primary-100 hover:bg-primary-200 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 shadow-sm uppercase tracking-wide border border-primary-200 dark:border-primary-800" title="Explain with ChatGPT">
+                                <span class="text-sm">🤖</span>
+                                <span>Explain</span>
+                            </button>
+                        </div>
 
-                    <div id="options-container" class="grid grid-cols-1 gap-2 md:gap-3 pb-2"></div>
+                        <div id="options-container" class="grid grid-cols-1 gap-2 md:gap-3 pb-2"></div>
+                    </div>
+                    
                 </div>
 
                 <!-- Missing Buttons restored -->
@@ -533,7 +550,7 @@
         <h3 class="text-2xl font-black text-blue-400 mb-2 text-center">Connected!</h3>
         <p class="text-slate-400 text-center text-sm">Wait for the Host to start the quiz...</p>
     </div>
-<script src="script.js?v=1.1" defer></script>
-<script src="multiplayer.js?v=1.1" defer></script>
+<script src="script.js" defer></script>
+<script src="multiplayer.js" defer></script>
 </body>
 </html>

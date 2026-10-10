@@ -96,463 +96,111 @@
         
 
         // ---------- FOLDER FUNCTIONS ---------- //
-        function createNewFolder() {
-            const folderName = prompt("Enter new folder name:");
-            if (!folderName || !folderName.trim()) return;
+        function showInlineFolderInput() {
+            document.getElementById('inline-folder-input').classList.remove('hidden');
+            document.getElementById('new-folder-name').focus();
+        }
+
+        function cancelInlineFolder() {
+            document.getElementById('inline-folder-input').classList.add('hidden');
+            document.getElementById('new-folder-name').value = '';
+        }
+
+        function saveInlineFolder() {
+            const input = document.getElementById('new-folder-name');
+            const folderName = input.value.trim();
+            if (!folderName) return;
             
             const folders = JSON.parse(localStorage.getItem('mcq_hub_folders') || '[]');
-            const newFolder = { id: Date.now().toString(), name: folderName.trim() };
+            
+            // NAYA: activeFolderId save hoga taaki pata chale ye kiske andar hai
+            const newFolder = { 
+                id: Date.now().toString(), 
+                name: folderName,
+                parentId: activeFolderId 
+            };
             folders.push(newFolder);
             localStorage.setItem('mcq_hub_folders', JSON.stringify(folders));
             
+            cancelInlineFolder();
             updateFolderSelectDropdown();
             loadLibrary();
             showToast("📁 Folder Created!");
         }
 
         function deleteFolder(e, id) {
-            e.stopPropagation(); // Parent ke click ko rokne ke liye
+            e.stopPropagation(); 
             if(confirm("⚠️ WARNING!\n\nAre you sure you want to delete this folder?\nALL QUIZZES inside this folder will also be DELETED permanently!")) {
-                // Delete Folder
                 let folders = JSON.parse(localStorage.getItem('mcq_hub_folders') || '[]');
                 folders = folders.filter(f => f.id !== id);
                 localStorage.setItem('mcq_hub_folders', JSON.stringify(folders));
                 
-                // Delete Items inside Folder
                 let lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
                 lib = lib.filter(i => i.folderId !== id);
                 localStorage.setItem('mcq_hub_library', JSON.stringify(lib));
                 
-                if (activeFolderId === id) activeFolderId = null;
-                
-                updateFolderSelectDropdown();
-                loadLibrary();
+                if (activeFolderId === id) goUpOneLevel();
+                else {
+                    updateFolderSelectDropdown();
+                    loadLibrary();
+                }
                 showToast("🗑️ Folder Deleted");
             }
         }
 
         function openFolder(id, name) {
             activeFolderId = id;
-            document.getElementById('library-search').value = ''; // clear search on enter
+            document.getElementById('library-search').value = ''; 
+            const selectEl = document.getElementById('folder-select');
+            if(selectEl) selectEl.value = id;
             loadLibrary();
         }
 
-        function goBackToRoot() {
-            activeFolderId = null;
+        function goUpOneLevel() {
             document.getElementById('library-search').value = '';
+            if (!activeFolderId) return; 
+            
+            const folders = JSON.parse(localStorage.getItem('mcq_hub_folders') || '[]');
+            const currentFolder = folders.find(f => f.id === activeFolderId);
+            
+            // NAYA: Ek step peeche (parent par) le jayega
+            if (currentFolder && currentFolder.parentId) {
+                activeFolderId = currentFolder.parentId;
+            } else {
+                activeFolderId = null; 
+            }
+            
+            const selectEl = document.getElementById('folder-select');
+            if(selectEl) selectEl.value = activeFolderId || "";
             loadLibrary();
+        }
+
+        // Dropdown mein pura rasta (path) dikhane ke liye (e.g. Psychology > Unit 1)
+        function getFolderPath(folderId, folders) {
+            if (!folderId) return "";
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return "";
+            if (folder.parentId) return getFolderPath(folder.parentId, folders) + " > " + folder.name;
+            return folder.name;
         }
 
         function updateFolderSelectDropdown() {
             const selectEl = document.getElementById('folder-select');
             if(!selectEl) return;
             
-            // Current selection bachaye rakhne ke liye
             const currentVal = selectEl.value;
-            
             const folders = JSON.parse(localStorage.getItem('mcq_hub_folders') || '[]');
             
             let html = `<option value="">📁 Main Menu (Root)</option>`;
             folders.forEach(f => {
-                html += `<option value="${f.id}">📂 ${f.name}</option>`;
+                const pathName = getFolderPath(f.id, folders);
+                html += `<option value="${f.id}">📂 ${pathName}</option>`;
             });
             selectEl.innerHTML = html;
             
-            // Agar purana select val valid hai to set kardo
-            if(folders.some(f => f.id === currentVal)) {
-                selectEl.value = currentVal;
-            }
+            if(folders.some(f => f.id === currentVal)) selectEl.value = currentVal;
         }
         // -------------------------------------- //
-
-        function openSettings() { 
-            updateSettingUI('exam');
-            updateSettingUI('shuffle');
-            updateSettingUI('palette');
-            updateSettingUI('timer');
-            document.getElementById('settings-modal').classList.remove('hidden'); 
-        }
-        function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
-        function handleTimerToggle() { updateSettingUI('timer'); }
-
-        function updateSettingUI(type) {
-            const isChecked = document.getElementById(type + '-toggle')?.checked;
-            const descEl = document.getElementById(type + '-desc');
-            if (!descEl) return;
-            // ... (baki setting code same hai)
-            if (type === 'exam') {
-                if (isChecked) descEl.innerHTML = `<span class="text-primary-600 font-bold">Active:</span> Answers & score hidden until result.`;
-                else descEl.innerHTML = `<span class="text-slate-400">Inactive:</span> Answers shown immediately.`;
-            } else if (type === 'shuffle') {
-                if (isChecked) descEl.innerHTML = `<span class="text-primary-600 font-bold">Active:</span> Questions will appear randomly.`;
-                else descEl.innerHTML = `<span class="text-slate-400">Inactive:</span> Original question order.`;
-            } else if (type === 'palette') {
-                if (isChecked) descEl.innerHTML = `<span class="text-primary-600 font-bold">Active:</span> Map button visible in quiz.`;
-                else descEl.innerHTML = `<span class="text-slate-400">Inactive:</span> Map button hidden.`;
-            } else if (type === 'timer') {
-                const inputContainer = document.getElementById('timer-input-container');
-                if (isChecked) {
-                    descEl.innerHTML = `<span class="text-primary-600 font-bold">Active:</span> Time limit enforced.`;
-                    inputContainer.classList.remove('hidden');
-                } else {
-                    descEl.innerHTML = `<span class="text-slate-400">Inactive:</span> No time limit.`;
-                    inputContainer.classList.add('hidden');
-                }
-            }
-        }
-
-        // Palette Code...
-        function openPalette() {
-            renderPalette();
-            document.getElementById('palette-modal').classList.remove('hidden');
-        }
-        function closePalette() { document.getElementById('palette-modal').classList.add('hidden'); }
-        function renderPalette() {
-            const grid = document.getElementById('palette-grid');
-            grid.innerHTML = '';
-            questions.forEach((q, idx) => {
-                const btn = document.createElement('button');
-                btn.innerText = q.originalNumber; 
-                btn.className = "palette-btn p-unanswered";
-                
-                const response = userResponses[idx];
-                if (response) {
-                    if (isExamMode) btn.className = "palette-btn p-answered-neutral"; 
-                    else {
-                        if (response === q.correctAnswer) btn.className = "palette-btn p-correct";
-                        else btn.className = "palette-btn p-wrong";
-                    }
-                }
-                
-                if (idx === currentIndex) btn.classList.add('p-current');
-                btn.onclick = () => {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    currentIndex = idx;
-                    showQuestion();
-                    closePalette();
-                };
-                grid.appendChild(btn);
-            });
-        }
-
-        function startQuiz(data, name) {
-            quizActive = true; 
-            history.pushState(null, document.title, location.href);
-
-            if (isShuffleMode) questions = shuffleArray([...data]);
-            else questions = data;
-            
-            originalChapterName = name;
-            currentIndex = 0;
-            score = 0;
-            userResponses = {};
-            quizStartTime = Date.now();
-            
-            document.getElementById('current-chapter-name').innerText = name;
-            
-            if (isPaletteEnabled) document.getElementById('open-palette-btn').classList.remove('hidden');
-            else document.getElementById('open-palette-btn').classList.add('hidden');
-
-            showView('quiz-view');
-            showQuestion();
-            saveSession();
-
-            // NAYA: Jaise hi "Bismillah" dabe, sab mobiles ko Game Start ka signal bhejo
-            if (typeof broadcastToMobiles === 'function') {
-                broadcastToMobiles({ type: 'quiz_started' });
-            }
-        }
-
-        function calculateScore() {
-            let s = 0;
-            questions.forEach((q, i) => { if (userResponses[i] === q.correctAnswer) s++; });
-            return s;
-        }
-
-        function showQuestion() {
-            const q = questions[currentIndex];
-            document.getElementById('question-text').innerHTML = `${q.originalNumber}. ${q.text}`;
-
-            const container = document.getElementById('options-container');
-            container.innerHTML = '';
-
-            if (maxTimePerQuestion > 0) {
-                if (!userResponses[currentIndex]) {
-                    if (!timerInterval) startTimer();
-                } else if (isExamMode && userResponses[currentIndex] !== 'TIMED_OUT') {
-                    if (!timerInterval) startTimer();
-                } else {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    document.getElementById('timer-text').innerText = "--:--";
-                }
-            } else {
-                document.getElementById('timer-container').classList.add('hidden');
-            }
-
-            q.options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = "option-btn w-full text-left p-3 md:p-5 border-2 border-slate-100 dark:border-slate-800 rounded-xl md:rounded-2xl flex items-center group";
-                btn.innerHTML = `<span class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold mr-3 md:mr-4 text-slate-400 uppercase text-xs md:text-sm shrink-0">${opt.label}</span><span class="text-sm md:text-lg font-medium">${opt.text}</span>`;
-
-                if (userResponses[currentIndex]) {
-                    if (isExamMode) {
-                        if (userResponses[currentIndex] === opt.label) btn.classList.add('selected-neutral');
-                        if (userResponses[currentIndex] === 'TIMED_OUT') btn.disabled = true;
-                    } else {
-                        if (opt.label === q.correctAnswer) btn.classList.add('correct');
-                        else if (opt.label === userResponses[currentIndex]) btn.classList.add('wrong');
-                        btn.disabled = true;
-                    }
-                }
-
-                btn.onclick = () => {
-                    userResponses[currentIndex] = opt.label;
-                    if (!isExamMode) {
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                        if (opt.label === q.correctAnswer) score = calculateScore();
-                    }
-                    saveSession(); 
-                    showQuestion(); 
-                };
-                container.appendChild(btn);
-            });
-            updateProgress();
-            
-            // NAYA: Mobiles ko signal bhejna ki agla question aa gaya hai, buttons reset karlo aur Q Number bhejo
-            if (typeof broadcastToMobiles === 'function') {
-                broadcastToMobiles({ 
-                    type: 'reset_ui', 
-                    currentQ: currentIndex + 1, 
-                    totalQ: questions.length 
-                });
-            }
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            document.getElementById('timer-container').classList.remove('hidden');
-            timeLeft = maxTimePerQuestion;
-            updateTimerDisplay();
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay();
-                if (timeLeft <= 5) document.getElementById('timer-text').classList.add('timer-low');
-                else document.getElementById('timer-text').classList.remove('timer-low');
-                
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    if (!userResponses[currentIndex]) userResponses[currentIndex] = 'TIMED_OUT';
-                    showQuestion();
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            document.getElementById('timer-text').innerText = `00:${timeLeft.toString().padStart(2, '0')}`;
-        }
-
-        function updateProgress() {
-            const total = questions.length;
-            const current = currentIndex + 1;
-            document.getElementById('progress-text').innerText = `Question ${current} of ${total}`;
-            document.getElementById('progress-bar').style.width = `${(current/total)*100}%`;
-            document.getElementById('score-text').innerText = isExamMode ? "Exam Mode" : `Score: ${calculateScore()}`;
-            document.getElementById('prev-btn').disabled = currentIndex === 0;
-            document.getElementById('next-btn').innerText = (currentIndex === total - 1) ? "Finish Test" : "Next";
-        }
-
-        function nextOrFinish() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            
-            if (currentIndex < questions.length - 1) {
-                currentIndex++;
-                saveSession(); 
-                
-                // NAYA: Mid-Game Leaderboard ab sirf tabhi aayega jab 1 se zyada log connected honge
-                if (Object.keys(multiPlayers).length > 1 && currentIndex % 5 === 0) {
-                    showMidGameStandings();
-                } else {
-                    showQuestion();
-                }
-            } else {
-                showResults();
-            }
-        }
-
-        // NAYA: Mid-Game Standings Flash Screen Logic
-        function showMidGameStandings() {
-            const container = document.getElementById('mid-game-standings');
-            const list = document.getElementById('mid-game-list');
-            if(!container || !list) { showQuestion(); return; }
-
-            list.innerHTML = '';
-            
-            // Score ke hisaab se sort karo
-            const playersArray = Object.keys(multiPlayers).map(name => ({ name, score: multiPlayers[name].score }));
-            playersArray.sort((a, b) => b.score - a.score);
-
-            // Sirf Top 3 dikhao, Points hide rakho
-            playersArray.slice(0, 3).forEach((p, i) => {
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
-                const bg = i === 0 ? 'bg-purple-900/40 border-purple-500' : 'bg-slate-700/50 border-slate-600';
-                
-                list.innerHTML += `
-                    <div class="${bg} border p-4 rounded-2xl flex justify-between items-center text-white font-bold text-xl transform transition-all hover:scale-105">
-                        <div class="flex items-center gap-4">
-                            <span class="text-3xl">${medal}</span>
-                            <span>${p.name}</span>
-                        </div>
-                        <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400 uppercase tracking-widest">Top Rank</span>
-                    </div>`;
-            });
-
-            container.classList.remove('hidden');
-            
-            // 5 Second ka Timer
-            let timeLeft = 5;
-            document.getElementById('mid-game-timer').innerText = timeLeft;
-            
-            const countInt = setInterval(() => {
-                timeLeft--;
-                document.getElementById('mid-game-timer').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(countInt);
-                    container.classList.add('hidden');
-                    showQuestion(); // 5 second baad agla sawaal dikhao
-                }
-            }, 1000);
-        }
-
-        function prevQuestion() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            if (currentIndex > 0) {
-                currentIndex--;
-                saveSession(); 
-                showQuestion();
-            }
-        }
-
-        function showResults() {
-            quizActive = false; 
-            clearSession(); 
-            clearInterval(timerInterval);
-            
-            const endTime = Date.now();
-            const timeDiff = (endTime - quizStartTime) / 1000; 
-            
-            const minutes = Math.floor(timeDiff / 60);
-            const seconds = Math.floor(timeDiff % 60);
-            document.getElementById('final-time').innerText = `${minutes}m ${seconds}s`;
-
-            const avgTime = questions.length > 0 ? (timeDiff / questions.length).toFixed(1) : 0;
-            document.getElementById('final-avg-time').innerText = `${avgTime}s`;
-
-            score = calculateScore();
-            document.getElementById('final-total').innerText = questions.length;
-            document.getElementById('final-correct').innerText = score;
-            const attempted = Object.keys(userResponses).filter(k => userResponses[k] !== 'TIMED_OUT').length;
-            document.getElementById('final-attempted').innerText = attempted;
-            document.getElementById('final-accuracy').innerText = `${Math.round((score/questions.length)*100)}%`;
-            
-            document.getElementById('practice-wrong-btn').classList.toggle('hidden', score === questions.length);
-            // Agar multiplayer mode chal raha tha, toh leaderboard dikhao
-            if (Object.keys(multiPlayers).length > 0) {
-                showLeaderboard();
-            }
-            showView('result-view');
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        }
-
-        function saveAndStart() {
-            const name = document.getElementById('test-name').value.trim() || "Untitled";
-            const content = document.getElementById('combined-input').value.trim();
-            // Naya: Check selected folder
-            const selectedFolderId = document.getElementById('folder-select').value || null;
-            
-            isExamMode = document.getElementById('exam-toggle').checked;
-            isShuffleMode = document.getElementById('shuffle-toggle').checked;
-            isPaletteEnabled = document.getElementById('palette-toggle').checked; 
-            
-            const isTimerEnabled = document.getElementById('timer-toggle').checked;
-            maxTimePerQuestion = isTimerEnabled ? (parseInt(document.getElementById('timer-setting').value) || 30) : 0;
-
-            if (!content) return;
-            const parsed = parseAsteriskFormat(content);
-            if (parsed.length === 0) { alert("Format Error!"); return; }
-            
-            const lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
-            // Naya: Saving with folderId
-            lib.push({ 
-                id: Date.now(), 
-                name, 
-                content, 
-                qCount: parsed.length, 
-                timerPref: maxTimePerQuestion,
-                folderId: selectedFolderId 
-            });
-            localStorage.setItem('mcq_hub_library', JSON.stringify(lib));
-            
-            loadLibrary();
-            startQuiz(parsed, name);
-        }
-
-        function loadTestFromLibrary(id) {
-            const lib = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
-            const item = lib.find(i => i.id === id);
-            if (item) {
-                isExamMode = document.getElementById('exam-toggle').checked;
-                isShuffleMode = document.getElementById('shuffle-toggle').checked;
-                isPaletteEnabled = document.getElementById('palette-toggle').checked; 
-                
-                const isTimerEnabled = document.getElementById('timer-toggle').checked;
-                maxTimePerQuestion = isTimerEnabled ? (parseInt(document.getElementById('timer-setting').value) || 30) : 0;
-                
-                startQuiz(parseAsteriskFormat(item.content), item.name);
-            }
-        }
-
-        function parseAsteriskFormat(text) {
-            const blocks = text.trim().split(/\n\s*(?=\d+\.)/);
-            return blocks.filter(b => b.trim().length > 5).map((block, idx) => {
-                const numMatch = block.match(/^(\d+)\./);
-                const originalNumber = numMatch ? numMatch[1] : (idx + 1);
-
-                let qText = "";
-                const qMatch = block.match(/<Q>([\s\S]*?)<\/Q>/i);
-                
-                if (qMatch) {
-                    qText = qMatch[1].trim();
-                } else {
-                    const lines = block.split('\n').map(l => l.trim()).filter(l => l !== "");
-                    if (lines.length === 0) return null;
-                    qText = lines[0].replace(/^\d+\.\s*/, '').trim();
-                }
-
-                let optionsBlock = block;
-                const aMatch = block.match(/<A>([\s\S]*?)<\/A>/i);
-                if (aMatch) optionsBlock = aMatch[1]; 
-
-                const optMatch = optionsBlock.match(/\*?\([a-d]\)[\s\S]*?(?=\*?\([a-d]\)|$)/g);
-                let correctLabel = '';
-                const options = optMatch ? optMatch.map(optStr => {
-                    const isCorrect = optStr.includes('*');
-                    const labelMatch = optStr.match(/\*?\(([a-d])\)/);
-                    const label = labelMatch ? labelMatch[1] : '';
-                    if (isCorrect) correctLabel = label;
-                    return { label, text: optStr.replace(/\*?\([a-d]\)\s*/, '').trim() };
-                }) : [];
-
-                if (!qText || options.length === 0) return null;
-
-                return { id: idx, originalNumber, text: qText, options, correctAnswer: correctLabel };
-            }).filter(q => q !== null);
-        }
 
         function loadLibrary() {
             const listEl = document.getElementById('library-list');
@@ -560,12 +208,11 @@
             
             const savedFolders = JSON.parse(localStorage.getItem('mcq_hub_folders') || '[]');
             const savedData = JSON.parse(localStorage.getItem('mcq_hub_library') || '[]');
-            
             const currentSessionJson = localStorage.getItem('mcq_hub_current_session');
-            let htmlContent = '';
             
-            // Header for current folder
+            let htmlContent = '';
             const folderHeaderEl = document.getElementById('current-folder-header');
+            
             if (activeFolderId && !searchVal) {
                 folderHeaderEl.classList.remove('hidden');
                 const currFolder = savedFolders.find(f => f.id === activeFolderId);
@@ -574,12 +221,11 @@
                 folderHeaderEl.classList.add('hidden');
             }
 
-            // Session UI logic
+            // Session UI Logic
             if (currentSessionJson && !searchVal) {
                 try {
                     const sessionData = JSON.parse(currentSessionJson);
                     const progress = Math.round(((sessionData.currentIndex) / sessionData.questions.length) * 100);
-                    
                     htmlContent += `
                     <div onclick="resumeSession()" class="mb-6 group w-full bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 border-green-100 dark:border-green-900/30 hover:border-green-500 dark:hover:border-green-500 transition-all shadow-md hover:shadow-xl cursor-pointer relative overflow-hidden transform hover:-translate-y-1">
                         <div class="flex justify-between items-start mb-3">
@@ -606,41 +252,38 @@
                     </div>
                     <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-4"></div>
                     `;
-                } catch(e) {
-                    console.error("Error parsing session data", e);
-                }
+                } catch(e) { console.error(e); }
             }
             
             listEl.innerHTML = htmlContent;
 
-            // RENDER FOLDERS (Only if not in a folder OR if searching)
+            // RENDER FOLDERS (Nested logic)
             let drawnFoldersCount = 0;
-            if (!activeFolderId || searchVal) {
-                const filteredFolders = savedFolders.filter(f => f.name.toLowerCase().includes(searchVal));
-                drawnFoldersCount = filteredFolders.length;
-                
-                filteredFolders.forEach(f => {
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between items-center p-3 bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-100 dark:border-primary-800 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors";
-                    div.innerHTML = `
-                        <div onclick="openFolder('${f.id}', '${f.name.replace(/'/g, "\\'")}')" class="flex-1 flex items-center gap-3">
-                            <span class="text-2xl">📁</span>
-                            <div>
-                                <p class="font-bold text-sm text-primary-900 dark:text-primary-100">${f.name}</p>
-                                <p class="text-[10px] text-primary-600 dark:text-primary-400 font-medium">Folder</p>
-                            </div>
+            const filteredFolders = savedFolders.filter(f => {
+                if (searchVal) return f.name.toLowerCase().includes(searchVal);
+                return (f.parentId || null) == activeFolderId;
+            });
+            drawnFoldersCount = filteredFolders.length;
+            
+            filteredFolders.forEach(f => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-3 bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-100 dark:border-primary-800 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors";
+                div.innerHTML = `
+                    <div onclick="openFolder('${f.id}', '${f.name.replace(/'/g, "\\'")}')" class="flex-1 flex items-center gap-3">
+                        <span class="text-2xl">📁</span>
+                        <div>
+                            <p class="font-bold text-sm text-primary-900 dark:text-primary-100">${f.name}</p>
+                            <p class="text-[10px] text-primary-600 dark:text-primary-400 font-medium">Folder</p>
                         </div>
-                        <button onclick="deleteFolder(event, '${f.id}')" class="text-slate-300 hover:text-red-500 p-2">🗑️</button>
-                    `;
-                    listEl.appendChild(div);
-                });
-            }
+                    </div>
+                    <button onclick="deleteFolder(event, '${f.id}')" class="text-slate-300 hover:text-red-500 p-2">🗑️</button>
+                `;
+                listEl.appendChild(div);
+            });
 
             // RENDER QUIZZES
             const filteredQuizzes = savedData.filter(i => {
                 const matchesSearch = i.name.toLowerCase().includes(searchVal);
-                // Agar search kar rahe hain, to saare folder ki files dikhao.
-                // Warna sirf active folder ke matching files dikhao.
                 const matchesFolder = searchVal ? true : (i.folderId || null) == activeFolderId;
                 return matchesSearch && matchesFolder;
             });
@@ -649,11 +292,10 @@
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors";
                 
-                // Show folder name if searching and item is in a folder
                 let folderBadge = '';
                 if(searchVal && item.folderId) {
-                    const fName = savedFolders.find(f=>f.id === item.folderId)?.name || 'Unknown';
-                    folderBadge = `<span class="bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 px-1.5 py-0.5 rounded text-[8px] uppercase ml-2">${fName}</span>`;
+                    const fPath = getFolderPath(item.folderId, savedFolders);
+                    folderBadge = `<span class="bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 px-1.5 py-0.5 rounded text-[8px] uppercase ml-2">${fPath}</span>`;
                 }
 
                 div.innerHTML = `
@@ -666,7 +308,6 @@
                 listEl.appendChild(div);
             });
             
-            // Empty State
             if (drawnFoldersCount === 0 && filteredQuizzes.length === 0 && !htmlContent) {
                 listEl.innerHTML += `<div class="text-center p-6 text-slate-400"><p class="text-3xl mb-2">📭</p><p class="text-sm font-medium">Nothing found</p></div>`;
             }
