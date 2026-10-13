@@ -53,10 +53,7 @@
 
        // 3. Main Desktop Initialization (The Server)
         function initPeer() {
-            // NAYA: Google STUN servers for faster and stable local connections
-            peer = new Peer({
-                config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
-            }); 
+            peer = new Peer();
             peer.on('connection', function(conn) {
                 clientConnections.push(conn); 
                 
@@ -519,21 +516,22 @@
                 
                 // Auto-Reconnect Logic
                 const savedName = sessionStorage.getItem('ramish_quiz_name');
-                const savedHost = sessionStorage.getItem('ramish_quiz_host');
+                // FIX: Naye QR code ko hamesha pehli priority do
+                const finalHostId = autoConnectId || sessionStorage.getItem('ramish_quiz_host');
 
-                if (savedName && savedHost) {
-                    document.getElementById('player-name-input').value = savedName;
-                    document.getElementById('connect-id-input').value = savedHost;
-                    
-                    // Thoda time dekar auto-connect trigger karna
+                if (savedName) document.getElementById('player-name-input').value = savedName;
+                
+                if (finalHostId) {
+                    document.getElementById('connect-id-input').value = finalHostId;
+                    if(autoConnectId) document.getElementById('connect-id-input').classList.add('hidden');
+                } else {
+                    document.getElementById('connect-id-input').classList.remove('hidden');
+                }
+                
+                if (savedName && finalHostId) {
                     setTimeout(() => {
                         connectToDesktop();
                     }, 1000);
-                } 
-                else if(autoConnectId) {
-                    document.getElementById('connect-id-input').value = autoConnectId;
-                } else {
-                    document.getElementById('connect-id-input').classList.remove('hidden');
                 }
                 
                 if (userRole === 'host') {
